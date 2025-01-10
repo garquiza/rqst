@@ -1,0 +1,83 @@
+body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        .content {
+            margin-left: 250px;
+        }
+
+        .header-card {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-card h1 {
+            margin-bottom: 10px;
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .search-container input {
+            width: 75%;
+            margin-right: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .search-container button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+        }
+
+        .status-dropdown {
+            margin-left: 20px;
+            padding: 10px;
+        }
+
+        .table th,
+        .table td {
+            vertical-align: middle;
+        }
+
+        .table-container .badge {
+            padding: 6px 12px;
+            text-transform: capitalize;
+        }
+
+        .badge-approved {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-pending {
+            background-color: #ffc107;
+            color: white;
+        }
+
+        .badge-rejected {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .total-number {
+            font-weight: 600;
+        }

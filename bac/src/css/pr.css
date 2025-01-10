@@ -1,0 +1,75 @@
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header-card {
+            background: linear-gradient(90deg, #007bff, #4bacef);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-search-row {
+            gap: 15px;
+        }
+
+        .filter-buttons .btn {
+            margin-right: 10px;
+        }
+
+        .search-bar {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .search-bar input {
+            padding-right: 35px;
+        }
+
+        .search-bar i {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        table {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background-color: #007bff;
+            color: white;
+        }
+
+        table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        table td,
+        table th {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .action-buttons button {
+            margin-right: 5px;
+        }
+
+        .action-buttons button i {
+            margin-right: 5px;
+        }
+
+        .btn {
+            border-radius: 30px;
+        }

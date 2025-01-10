@@ -1,0 +1,51 @@
+body {
+            background-color: #f4f6f9;
+        }
+
+        .header-card {
+            background: linear-gradient(90deg, #007bff, #4bacef);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            background: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .accordion-button:focus {
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            background-color: #4a90e2;
+            border-color: #4a90e2;
+        }
+
+        .btn-primary:hover {
+            background-color: #357ab8;
+        }
+
+        @media (max-width: 576px) {
+            .card {
+                padding: 10px;
+            }
+
+            .accordion-button {
+                font-size: 0.9rem;
+            }
+
+            label {
+                font-size: 0.85rem;
+            }
+        }

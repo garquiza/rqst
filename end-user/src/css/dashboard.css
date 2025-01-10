@@ -1,0 +1,181 @@
+/* General Styling */
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #343a40;
+            color: #fff;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+        }
+
+        .sidebar a:hover {
+            background-color: #495057;
+            color: #fff;
+        }
+
+        .sidebar .header {
+            padding: 15px;
+            background-color: #212529;
+            font-weight: bold;
+            font-size: 1.25rem;
+            text-align: center;
+        }
+
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card-text {
+            color: #6c757d;
+        }
+
+        /* FullCalendar Styling */
+        .calendar-container {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .fc {
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+        }
+
+        /* Calendar Header (Navigation buttons) */
+        .fc-toolbar {
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 0.75rem;
+            padding: 10px 20px;
+        }
+
+        .fc-toolbar .fc-button {
+            background-color: #0056b3;
+            color: #fff;
+            border: none;
+            border-radius: 0.5rem;
+            padding: 8px 15px;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+
+        .fc-toolbar .fc-button:hover {
+            background-color: #004085;
+        }
+
+        /* Calendar Date Grid */
+        .fc-daygrid-day {
+            position: relative;
+            border: 1px solid #f0f0f0;
+            border-radius: 0.5rem;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s ease;
+        }
+
+        .fc-daygrid-day:hover {
+            background-color: #e9ecef;
+            cursor: pointer;
+        }
+
+        .fc-daygrid-day-number {
+            font-weight: bold;
+            font-size: 16px;
+            color: #495057;
+        }
+
+        .fc-daygrid-day.fc-day-today {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+            color: #fff;
+        }
+
+        /* Event Styling */
+        .fc-event {
+            border-radius: 0.25rem;
+            font-size: 12px;
+            padding: 5px;
+            color: #fff;
+            background-color: #28a745;
+            display: block;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .fc-event.fc-event-clicked {
+            background-color: #007bff;
+        }
+
+        /* Tooltip/Popover for events (optional) */
+        .fc-event .fc-tooltip {
+            background-color: #343a40;
+            color: #fff;
+            font-size: 12px;
+            padding: 5px;
+            border-radius: 0.5rem;
+        }
+
+        /* Calendar Event Details (hover effect) */
+        .fc-event:hover {
+            background-color: #218838;
+            cursor: pointer;
+            transform: scale(1.05);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        /* Day Highlighting */
+        .fc-daygrid-day-number.fc-day-today {
+            background-color: #ffdf00;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .header-card {
+            background: linear-gradient(90deg, #007bff, #4bacef);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsiveness */
+        @media (max-width: 768px) {
+            .fc-toolbar .fc-button {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+
+            .calendar-container {
+                padding: 15px;
+            }
+        }
