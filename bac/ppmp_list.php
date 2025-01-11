@@ -26,6 +26,10 @@ if ($yearResult) {
         $years[] = $yearRow['year'];
     }
 }
+// Fetch the value of `updates_enabled` from the `settings` table
+$updatesQuery = "SELECT updates_enabled FROM settings WHERE id = 2";
+$updatesResult = mysqli_query($conn, $updatesQuery);
+$updatesEnabled = mysqli_fetch_assoc($updatesResult)['updates_enabled'];
 
 $query = "
     SELECT 
@@ -183,7 +187,10 @@ if (mysqli_num_rows($result) == 0) {
                                         <i class="fas fa-print"></i>
                                     </button>
 
-                                    <a href="../bac/edit_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>" class="btn btn-outline-warning btn-sm" title="Update PPMP" style="margin-right: 5px;">
+                                    <a href="../bac/edit_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
+                                        class="btn btn-outline-warning btn-sm edit-btn"
+                                        title="Edit PPMP"
+                                        style="margin-right: 5px;">
                                         <i class="fas fa-edit"></i>
                                     </a>
 
@@ -323,6 +330,15 @@ if (mysqli_num_rows($result) == 0) {
                 row.style.display = (selectedYear === 'all' || selectedYear === createdYear || selectedYear === boundYear) ? '' : 'none';
             });
         });
+        // Disable "Edit" buttons if updates_enabled is 0
+        const updatesEnabled = <?php echo $updatesEnabled; ?>;
+        if (updatesEnabled === 0) {
+            const editButtons = document.querySelectorAll('.edit-btn');
+            editButtons.forEach(button => {
+                button.classList.add('disabled');
+                button.setAttribute('disabled', 'true');
+            });
+        }
     </script>
 </body>
 
