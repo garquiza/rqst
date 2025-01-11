@@ -383,33 +383,27 @@ INSERT INTO `pmaf` (`id`, `modality`, `project_title`, `fund`, `mooe_items`, `co
 -- --------------------------------------------------------
 
 --
--- Table structure for table `ppmp_form` ITO MC BAGONG PALIT
+-- Table structure for table `ppmp_form`
 --
 
 CREATE TABLE ppmp_form (
   ppmp_form_id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   year varchar(4) NOT NULL,
   code varchar(100) NOT NULL,
-  general_description JSON NOT NULL,
-  quantity_size JSON NOT NULL,
+  general_description text NOT NULL,
+  quantity_size varchar(100) NOT NULL,
   estimated_budget decimal(15,2) NOT NULL,
   schedule longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(schedule)),
   ppmp_id int(11) UNSIGNED NOT NULL,
   mode_of_procurement varchar(255) NOT NULL,
-  unit_measurement JSON NOT NULL,
-  unit_cost JSON NOT NULL,
+  unit_measurement varchar(100) NOT NULL,
+  unit_cost decimal(15,2) NOT NULL,
   date_created timestamp NOT NULL DEFAULT current_timestamp(),
   created_at timestamp NOT NULL DEFAULT current_timestamp(),
-  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (ppmp_form_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
---
--- Dumping data for table `ppmp_form`
---
-
-INSERT INTO `ppmp_form` (`ppmp_form_id`, `year`, `code`, `general_description`, `quantity_size`, `estimated_budget`, `schedule`, `ppmp_id`, `date_created`, `created_at`, `updated_at`) VALUES
-(13, '2025', '5A5FDDDE2E', 'Aircon', '5 ', 1000000.00, '[\"May\"]', 13, '2025-01-08 10:04:19', '2025-01-08 10:04:19', '2025-01-08 10:04:19');
 
 -- --------------------------------------------------------
 
@@ -1358,3 +1352,4 @@ ALTER TABLE `settings`
 
 ALTER TABLE `settings`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+

@@ -76,6 +76,33 @@ $formData = $formResult->fetch_assoc();
     <link rel="stylesheet" href="src/css/ppmp_list.css">
     <link rel="stylesheet" href="src/css/ppmp.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        #mode_of_procurement {
+            background-color: #f8f9fa;
+            /* Light gray background */
+            border: 1px solid #ced4da;
+            /* Border color */
+            border-radius: 0.25rem;
+            /* Rounded corners */
+            padding: 0.375rem 1.2rem;
+            /* Padding inside the dropdown */
+            font-size: 1rem;
+            /* Font size */
+        }
+
+        #mode_of_procurement:focus {
+            border-color: #80bdff;
+            /* Blue border on focus */
+            outline: none;
+            /* Remove outline */
+        }
+
+        #mode_of_procurement option {
+            font-size: 1rem;
+            /* Font size of options */
+        }
+    </style>
 </head>
 
 <body>
@@ -117,6 +144,35 @@ $formData = $formResult->fetch_assoc();
                     <input type="text" class="form-control" id="code" name="code" value="<?php echo htmlspecialchars($formData['code']); ?>" required>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="mode_of_procurement">Mode of Procurement</label>
+                    <select id="mode_of_procurement" name="mode_of_procurement" required>
+                        <option value="Competitive Bidding" <?php echo ($formData['mode_of_procurement'] == 'Competitive Bidding') ? 'selected' : ''; ?>>Competitive Bidding</option>
+                        <option value="Limited Source Bidding" <?php echo ($formData['mode_of_procurement'] == 'Limited Source Bidding') ? 'selected' : ''; ?>>Limited Source Bidding</option>
+                        <option value="Direct Contracting" <?php echo ($formData['mode_of_procurement'] == 'Direct Contracting') ? 'selected' : ''; ?>>Direct Contracting</option>
+                        <option value="Repeat Order" <?php echo ($formData['mode_of_procurement'] == 'Repeat Order') ? 'selected' : ''; ?>>Repeat Order</option>
+                        <option value="Shopping" <?php echo ($formData['mode_of_procurement'] == 'Shopping') ? 'selected' : ''; ?>>Shopping</option>
+                        <option value="NP-53.1 Two Failed Biddings" <?php echo ($formData['mode_of_procurement'] == 'NP-53.1 Two Failed Biddings') ? 'selected' : ''; ?>>NP-53.1 Two Failed Biddings</option>
+                        <option value="NP-53.2 Emergency Cases" <?php echo ($formData['mode_of_procurement'] == 'NP-53.2 Emergency Cases') ? 'selected' : ''; ?>>NP-53.2 Emergency Cases</option>
+                        <option value="Emergency Procurement under the Bayanihan Act" <?php echo ($formData['mode_of_procurement'] == 'Emergency Procurement under the Bayanihan Act') ? 'selected' : ''; ?>>Emergency Procurement under the Bayanihan Act</option>
+                        <option value="NP-53.3 Take-Over of Contracts" <?php echo ($formData['mode_of_procurement'] == 'NP-53.3 Take-Over of Contracts') ? 'selected' : ''; ?>>NP-53.3 Take-Over of Contracts</option>
+                        <option value="NP-53.4 Adjacent or Contiguous" <?php echo ($formData['mode_of_procurement'] == 'NP-53.4 Adjacent or Contiguous') ? 'selected' : ''; ?>>NP-53.4 Adjacent or Contiguous</option>
+                        <option value="NP-53.5 Agency-to-Agency" <?php echo ($formData['mode_of_procurement'] == 'NP-53.5 Agency-to-Agency') ? 'selected' : ''; ?>>NP-53.5 Agency-to-Agency</option>
+                        <option value="NP-53.6 Scientific, Scholarly, Artistic Work, Exclusive Technology and Media Services" <?php echo ($formData['mode_of_procurement'] == 'NP-53.6 Scientific, Scholarly, Artistic Work, Exclusive Technology and Media Services') ? 'selected' : ''; ?>>NP-53.6 Scientific, Scholarly, Artistic Work, Exclusive Technology and Media Services</option>
+                        <option value="NP-53.7 Highly Technical Consultants" <?php echo ($formData['mode_of_procurement'] == 'NP-53.7 Highly Technical Consultants') ? 'selected' : ''; ?>>NP-53.7 Highly Technical Consultants</option>
+                        <option value="NP-53.8 Defense Cooperation Agreement" <?php echo ($formData['mode_of_procurement'] == 'NP-53.8 Defense Cooperation Agreement') ? 'selected' : ''; ?>>NP-53.8 Defense Cooperation Agreement</option>
+                        <option value="NP-53.9 - Small Value Procurement" <?php echo ($formData['mode_of_procurement'] == 'NP-53.9 - Small Value Procurement') ? 'selected' : ''; ?>>NP-53.9 - Small Value Procurement</option>
+                        <option value="NP-53.10 Lease of Real Property and Venue" <?php echo ($formData['mode_of_procurement'] == 'NP-53.10 Lease of Real Property and Venue') ? 'selected' : ''; ?>>NP-53.10 Lease of Real Property and Venue</option>
+                        <option value="NP-53.11 NGO Participation" <?php echo ($formData['mode_of_procurement'] == 'NP-53.11 NGO Participation') ? 'selected' : ''; ?>>NP-53.11 NGO Participation</option>
+                        <option value="NP-53.12 Community Participation" <?php echo ($formData['mode_of_procurement'] == 'NP-53.12 Community Participation') ? 'selected' : ''; ?>>NP-53.12 Community Participation</option>
+                        <option value="NP-53.13 UN Agencies, Int'l Organizations or Intentional Financing Institutions" <?php echo ($formData['mode_of_procurement'] == 'NP-53.13 UN Agencies, Int\'l Organizations or Intentional Financing Institutions') ? 'selected' : ''; ?>>NP-53.13 UN Agencies, Int'l Organizations or Intentional Financing Institutions</option>
+                        <option value="NP-53.14 Direct Retail Purchase of Petroleum Fuel, Oil and Lubricant (POL) Products and Airline Tickets" <?php echo ($formData['mode_of_procurement'] == 'NP-53.14 Direct Retail Purchase of Petroleum Fuel, Oil and Lubricant (POL) Products and Airline Tickets') ? 'selected' : ''; ?>>NP-53.14 Direct Retail Purchase of Petroleum Fuel, Oil and Lubricant (POL) Products and Airline Tickets</option>
+                        <option value="Others - Foreign-funded procurements" <?php echo ($formData['mode_of_procurement'] == 'Others - Foreign-funded procurements') ? 'selected' : ''; ?>>Others - Foreign-funded procurements</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label for="general_description" class="form-label">General Description</label>
                 <textarea class="form-control" id="general_description" name="general_description" rows="3" required><?php echo htmlspecialchars($formData['general_description']); ?></textarea>
@@ -125,6 +181,7 @@ $formData = $formResult->fetch_assoc();
                 <label for="quantity_size" class="form-label">Quantity / Size</label>
                 <input type="text" class="form-control" id="quantity_size" name="quantity_size" value="<?php echo htmlspecialchars($formData['quantity_size']); ?>" required>
             </div>
+
             <div class="mb-3">
                 <label for="estimated_budget" class="form-label">Estimated Budget</label>
                 <input type="number" step="0.01" class="form-control" id="estimated_budget" name="estimated_budget" value="<?php echo htmlspecialchars($formData['estimated_budget']); ?>" required>
@@ -219,6 +276,21 @@ $formData = $formResult->fetch_assoc();
                         });
                 }
             });
+        });
+        document.getElementById('add-row').addEventListener('click', function() {
+            const table = document.getElementById('items-table').getElementsByTagName('tbody')[0];
+            const newRow = document.querySelector('.item-row').cloneNode(true);
+            newRow.querySelectorAll('input, select').forEach(input => input.value = '');
+            table.appendChild(newRow);
+        });
+
+        document.getElementById('items-table').addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-row')) {
+                const row = e.target.closest('tr');
+                if (document.querySelectorAll('.item-row').length > 1) {
+                    row.remove();
+                }
+            }
         });
     </script>
 </body>
