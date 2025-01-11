@@ -1275,3 +1275,39 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- Table for access dates
+
+CREATE TABLE `access_dates` (
+  `id` int(11) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `access_dates` (`id`, `start_date`, `end_date`) VALUES
+(1, '2025-01-11', '2025-01-30');
+
+ALTER TABLE `access_dates`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `access_dates`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+
+--Table for 'enable/disable' Update PPMP 
+CREATE TABLE `settings` (
+  `id` int(11) NOT NULL,
+  `updates_enabled` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+INSERT INTO `settings` (`id`, `updates_enabled`) VALUES
+(1, 0),
+(2, 0);
+
+ALTER TABLE `settings`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
