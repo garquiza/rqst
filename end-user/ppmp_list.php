@@ -9,14 +9,27 @@ if (!isset($_SESSION['user_id'])) {
 
 // Include database connection
 include('src/config/database.php');
+$accessQuery = "SELECT start_date, end_date FROM access_dates WHERE id = 1";  // Renaming the query variable
+$accessResult = mysqli_query($conn, $accessQuery);
+$accessDates = mysqli_fetch_assoc($accessResult);
+
+// Check if access dates exist
+if (!$accessDates) {
+    die("Error fetching access dates: " . mysqli_error($conn));
+}
+
+// Convert dates for JavaScript comparison
+$startDate = $accessDates['start_date'];
+$endDate = $accessDates['end_date'];
+
 
 $currentYear = date("Y");
 $nextYear = $currentYear + 1; // Get next year
 $yearQuery = "
-    SELECT DISTINCT YEAR(date_created) AS year FROM ppmp_list
-    UNION
-    SELECT DISTINCT date_bound AS year FROM ppmp_list
-    ORDER BY year DESC
+SELECT DISTINCT YEAR(date_created) AS year FROM ppmp_list
+UNION
+SELECT DISTINCT date_bound AS year FROM ppmp_list
+ORDER BY year DESC
 ";
 $yearResult = mysqli_query($conn, $yearQuery);
 $years = [];
@@ -26,6 +39,10 @@ if ($yearResult) {
     }
 }
 
+// Fetch the value of `updates_enabled` from the `settings` table
+$updatesQuery = "SELECT updates_enabled FROM settings WHERE id = 1";
+$updatesResult = mysqli_query($conn, $updatesQuery);
+$updatesEnabled = mysqli_fetch_assoc($updatesResult)['updates_enabled'];
 // Fetch PPMP data from the database
 $query = "SELECT ppmp_id, project_title, approver, date_created, status FROM ppmp_list";
 $result = mysqli_query($conn, $query);
@@ -34,6 +51,9 @@ $result = mysqli_query($conn, $query);
 if (!$result) {
     die("Error fetching data: " . mysqli_error($conn));
 }
+
+
+
 ?>
 
 <!DOCTYPE html>
@@ -57,6 +77,14 @@ if (!$result) {
         <div class="header-card mb-4">
             <h1 class="display-5 mb-2">PPMP List</h1>
             <p class="text-light">Manage and track the status of PPMPs.</p>
+            <!-- Display the Access Dates -->
+            <div class="alert alert-info mt-3">
+                <strong>Access Dates:</strong>
+                <?php
+                // Display the fetched access dates
+                echo "From <strong>" . date("F j, Y", strtotime($startDate)) . "</strong> to <strong>" . date("F j, Y", strtotime($endDate)) . "</strong>";
+                ?>
+            </div>
         </div>
 
         <div class="table-container">
@@ -134,7 +162,10 @@ if (!$result) {
                                         style="margin-right: 5px;">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                    <a href="update_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>" class="btn btn-outline-warning btn-sm" title="Edit PPMP" style="margin-right: 5px;">
+                                    <a href="update_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
+                                        class="btn btn-outline-warning btn-sm edit-btn"
+                                        title="Edit PPMP"
+                                        style="margin-right: 5px;">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <button class="btn btn-outline-danger btn-sm" title="Delete PPMP" onclick="confirmDelete('<?php echo $row['ppmp_id']; ?>')">
@@ -228,8 +259,52 @@ if (!$result) {
                     });
                 });
         }
-    </script>
+        // Pass PHP variables to JavaScript with renamed variables to avoid conflict
+        const phpAccessStartDate = '<?php echo $startDate; ?>';
+        const phpAccessEndDate = '<?php echo $endDate; ?>';
 
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get today's date
+            const today = new Date();
+
+            // Parse the access dates from PHP (using renamed variables)
+            const accessStart = new Date(phpAccessStartDate);
+            const accessEnd = new Date(phpAccessEndDate);
+
+            // Get the "Create PPMP" button element
+            const createButton = document.querySelector('a[href="create_ppmp.php"]');
+
+            // Event listener for when the "Create PPMP" button is clicked
+            createButton.addEventListener('click', function(event) {
+                // If today is outside the access dates
+                if (today < accessStart || today > accessEnd) {
+                    event.preventDefault(); // Prevent navigation to the "Create PPMP" page
+
+                    // Show the "Access Denied" popup
+                    Swal.fire({
+                        title: 'Access Denied!',
+                        text: 'You can only create PPMPs within the allowed access dates.',
+                        icon: 'error',
+                        confirmButtonText: 'Okay'
+                    }).then(() => {
+                        // After closing the popup, disable the "Create PPMP" button
+                        createButton.style.pointerEvents = 'none'; // Disable button
+                        createButton.style.opacity = '0.5'; // Make it appear disabled
+                    });
+                }
+            });
+        });
+        const updatesEnabled = <?php echo $updatesEnabled; ?>;
+
+        // Disable "Edit" buttons if updates_enabled is 0
+        if (updatesEnabled === 0) {
+            const editButtons = document.querySelectorAll('.edit-btn');
+            editButtons.forEach(button => {
+                button.classList.add('disabled');
+                button.setAttribute('disabled', 'true');
+            });
+        }
+    </script>
 </body>
 
 </html>

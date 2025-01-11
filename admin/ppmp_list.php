@@ -8,8 +8,24 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once '../admin/src/config/database.php';
 
+// Fetch the access dates
+$accessDateQuery = "SELECT start_date, end_date FROM access_dates WHERE id = 1";
+$accessDateResult = mysqli_query($conn, $accessDateQuery);
+$access_dates = null;
+
+if ($accessDateResult && mysqli_num_rows($accessDateResult) > 0) {
+    // Fetch the access dates from the database
+    $access_dates = mysqli_fetch_assoc($accessDateResult);
+} else {
+    // Handle case where access dates are not found (optional fallback)
+    $access_dates = null;
+}
+
+// Get the current and next year
 $currentYear = date("Y");
 $nextYear = $currentYear + 1; // Get next year
+
+// Fetch distinct years for dropdown
 $yearQuery = "
     SELECT DISTINCT YEAR(date_created) AS year FROM ppmp_list
     UNION
@@ -24,6 +40,7 @@ if ($yearResult) {
     }
 }
 
+// Fetch the PPMP list
 $query = "
     SELECT 
         pl.ppmp_id, 
@@ -45,7 +62,6 @@ if (!$result) {
     die("Error fetching data: " . mysqli_error($conn));
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -69,8 +85,31 @@ if (!$result) {
             <h1 class="display-5 mb-2">PPMP List (Admin)</h1>
             <p class="text-light">Manage, track, and approve PPMPs as an administrator.</p>
             <strong>
-                <p class="text-light">Access Date: January 1, <?php echo $currentYear; ?> - December 31, <?php echo $currentYear; ?></p>
+                <p class="text-light">
+                    Access Date:
+                    <?php
+                    // Assuming $access_dates is fetched and contains 'start_date' and 'end_date'
+                    echo date("F j, Y", strtotime($access_dates['start_date'])) . " - " . date("F j, Y", strtotime($access_dates['end_date']));
+                    ?>
+                </p>
             </strong>
+            <style>
+                .custom-border-btn {
+                    border: 1px solid rgb(18, 44, 65);
+                    background-color: rgb(138, 33, 40);
+                    transition: transform 0.3s ease, border-color 0.3s ease;
+                    /* Smooth transition */
+                    /* Blue border */
+                }
+
+                .custom-border-btn:hover {
+                    transform: scale(1.1);
+                    background-color: rgb(138, 33, 40);
+                    /* Make the button 10% bigger */
+                }
+            </style>
+
+            <button class="btn btn-primary custom-border-btn" data-bs-toggle="modal" data-bs-target="#accessDateModal">Set Access Dates</button>
         </div>
 
         <div class="table-container">
@@ -201,6 +240,31 @@ if (!$result) {
             </tbody>
         </table>
     </div>
+    <!-- Modal for Access Dates -->
+    <div class="modal fade" id="accessDateModal" tabindex="-1" aria-labelledby="accessDateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accessDateModalLabel">Set Access Dates</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="accessDateForm">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Dates</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -322,6 +386,59 @@ if (!$result) {
                 const boundYear = row.getAttribute('data-bound-year');
                 row.style.display = (selectedYear === 'all' || selectedYear === createdYear || selectedYear === boundYear) ? '' : 'none';
             });
+        });
+
+        document.getElementById('accessDateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            console.log("Start Date: ", startDate); // Check the values before sending
+            console.log("End Date: ", endDate);
+
+            fetch('../admin/src/process/update_access_dates.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        start_date: startDate,
+                        end_date: endDate
+                    })
+                })
+                .then(response => {
+                    console.log('Response from server:', response); // Log the response
+                    return response.json(); // Return JSON response to be processed
+                })
+                .then(data => {
+                    console.log('Response data:', data); // Check the response data
+
+                    if (data.success) {
+                        Swal.fire('Success', 'Access dates updated successfully', 'success')
+                            .then(() => {
+                                location.reload(); // Reload the page after "OK" is clicked
+                            });
+
+                        // Check if element exists before updating it
+                        const accessDatesElement = document.getElementById('access-dates');
+                        if (accessDatesElement) {
+                            accessDatesElement.textContent = `Access Date: ${startDate} - ${endDate}`;
+                        } else {
+                            console.error("Element with id 'access-dates' not found.");
+                        }
+
+                        // Close modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('accessDateModal'));
+                        modal.hide();
+                    } else {
+                        Swal.fire('Error', 'Failed to update access dates: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'Something went wrong, please try again later.', 'error');
+                });
         });
     </script>
 </body>
