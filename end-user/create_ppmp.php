@@ -96,7 +96,7 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <label for="estimated_budget">Estimated Budget:</label>
-                        <input type="text" id="estimated_budget" name="estimated_budget" required>
+                        <input type="text" id="estimated_budget" name="estimated_budget" required readonly>
                     </div>
                 </div>
 
@@ -173,6 +173,25 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
     <script>
         $(document).ready(function() {
+            // Function to calculate the total estimated budget
+            function updateEstimatedBudget() {
+                let totalBudget = 0;
+
+                // Loop through each row to calculate quantity * unit cost
+                $('#items-table tbody tr').each(function() {
+                    let quantity = $(this).find('input[name="quantity_size[]"]').val();
+                    let unitCost = $(this).find('input[name="unit_cost[]"]').val();
+
+                    // Check if both quantity and unit cost are valid numbers
+                    if (quantity && unitCost) {
+                        totalBudget += (parseFloat(quantity) * parseFloat(unitCost));
+                    }
+                });
+
+                // Update the estimated budget field with the calculated total
+                $('#estimated_budget').val(totalBudget.toFixed(2)); // Keep it to two decimal places
+            }
+
             // Event listener for category change (use event delegation to handle dynamic rows)
             $(document).on('change', '.category-dropdown', function() {
                 var categoryId = $(this).val(); // Get the selected category_id
@@ -240,10 +259,19 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
                 $('#items-table tbody').append(newRow);
             });
 
+            // Recalculate the budget whenever quantity or unit cost changes
+            $(document).on('input', 'input[name="quantity_size[]"], input[name="unit_cost[]"]', function() {
+                updateEstimatedBudget(); // Recalculate estimated budget
+            });
+
             // Remove a row when the 'Remove' button is clicked
             $(document).on('click', '.remove-row', function() {
                 $(this).closest('tr').remove();
+                updateEstimatedBudget(); // Recalculate estimated budget after row removal
             });
+
+            // Initialize the budget calculation when the page loads (in case there are existing rows)
+            updateEstimatedBudget();
         });
 
         // Handle form submission
