@@ -184,8 +184,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <li class="<?= $current_page === 'history.php' ? 'active' : '' ?>">
                     <a href="history.php"><i class="fas fa-history"></i> History Logs</a>
                 </li>
-                <li class="<?= $current_page === 'inventory.php' ? 'active' : '' ?>">
-                    <a href="inventory.php"><i class="fas fa-box"></i> Inventory</a>
+                <li class="<?= $current_page === 'category.php' ? 'active' : '' ?>">
+                    <a href="category.php"><i class="fas fa-box"></i> Inventory</a>
                 </li>
                 <li class="dropdown <?= in_array($current_page, ['settings.php', 'procurement_title.php']) ? 'active' : '' ?>">
                     <a href="#"><i class="fas fa-cog"></i> Settings <i class="fas fa-chevron-down ms-auto"></i></a>
