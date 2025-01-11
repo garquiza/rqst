@@ -173,14 +173,14 @@ $formData = $formResult->fetch_assoc();
                 </div>
             </div>
 
-            <div class="mb-3">
+            <!-- <div class="mb-3">
                 <label for="general_description" class="form-label">General Description</label>
                 <textarea class="form-control" id="general_description" name="general_description" rows="3" required><?php echo htmlspecialchars($formData['general_description']); ?></textarea>
             </div>
             <div class="mb-3">
                 <label for="quantity_size" class="form-label">Quantity / Size</label>
                 <input type="text" class="form-control" id="quantity_size" name="quantity_size" value="<?php echo htmlspecialchars($formData['quantity_size']); ?>" required>
-            </div>
+            </div> -->
 
             <div class="mb-3">
                 <label for="estimated_budget" class="form-label">Estimated Budget</label>
@@ -215,6 +215,44 @@ $formData = $formResult->fetch_assoc();
                 }
                 ?>
             </div>
+
+            <!-- Table for Items -->
+            <table class="table" id="items-table">
+                <thead>
+                    <tr>
+                        <th>General Description(Items)</th>
+                        <th>Unit of Measurement</th>
+                        <th>Quantity / Size</th>
+                        <th>Unit Cost</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    // Example: Fetch the rows from the database
+                    $itemsQuery = "SELECT * FROM ppmp_form"; // Example query
+                    $itemsResult = mysqli_query($conn, $itemsQuery);
+
+                    while ($item = mysqli_fetch_assoc($itemsResult)) {
+                    ?>
+                        <tr class="item-row">
+                            <td>
+                                <select name="general_description[]" class="form-control item-dropdown" required>
+                                    <!-- Items will be dynamically populated here -->
+                                    <option value="<?php echo $item['general_description']; ?>" selected>
+                                        <?php echo $item['general_description']; ?>
+                                    </option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="unit_measurement[]" class="form-control" value="<?php echo $item['unit_measurement']; ?>" required></td>
+                            <td><input type="number" name="quantity_size[]" class="form-control" value="<?php echo $item['quantity_size']; ?>" required></td>
+                            <td><input type="number" name="unit_cost[]" class="form-control" value="<?php echo $item['unit_cost']; ?>" required></td>
+                            <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
+                        </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+
 
             <div class="d-flex justify-content-between">
                 <button type="submit" class="btn btn-primary">Update PPMP Form</button>
