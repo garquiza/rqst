@@ -100,24 +100,6 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <label class="mb-4">Schedule / Milestone of Activities:</label>
-                    <div class="schedule-checkboxes">
-                        <label><input type="checkbox" name="schedule[]" value="January"> January</label>
-                        <label><input type="checkbox" name="schedule[]" value="February"> February</label>
-                        <label><input type="checkbox" name="schedule[]" value="March"> March</label>
-                        <label><input type="checkbox" name="schedule[]" value="April"> April</label>
-                        <label><input type="checkbox" name="schedule[]" value="May"> May</label>
-                        <label><input type="checkbox" name="schedule[]" value="June"> June</label>
-                        <label><input type="checkbox" name="schedule[]" value="July"> July</label>
-                        <label><input type="checkbox" name="schedule[]" value="August"> August</label>
-                        <label><input type="checkbox" name="schedule[]" value="September"> September</label>
-                        <label><input type="checkbox" name="schedule[]" value="October"> October</label>
-                        <label><input type="checkbox" name="schedule[]" value="November"> November</label>
-                        <label><input type="checkbox" name="schedule[]" value="December"> December</label>
-                    </div>
-                </div>
-
                 <!-- Table for Items -->
                 <table class="table" id="items-table">
                     <thead>
@@ -157,8 +139,6 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
                 <div class="mb-4 text-center">
                     <button type="button" id="add-row" class="btn btn-success">Add Item</button>
                 </div>
-
-
 
                 <!-- Submit Button -->
                 <div class="mb-4 text-center">

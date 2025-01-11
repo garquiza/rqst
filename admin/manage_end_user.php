@@ -139,6 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <th>ID</th>
                             <th>First Name</th>
                             <th>Last Name</th>
+                            <th>Sector</th>
                             <th>Email</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -151,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td><?php echo htmlspecialchars($user['id']); ?></td>
                                     <td><?php echo htmlspecialchars($user['first_name']); ?></td>
                                     <td><?php echo htmlspecialchars($user['last_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['sector']); ?></td>
                                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                                     <td>
                                         <?php if ($user['status'] === 'activate'): ?>

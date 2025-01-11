@@ -52,6 +52,12 @@ require_once '../admin/src/config/database.php';
                     </div>
 
                     <div class="mb-3">
+                        <label for="sector" class="form-label">Sector</label>
+                        <input type="text" class="form-control" id="sector" name="sector" placeholder="Enter Sector" required>
+                        <div class="invalid-feedback">Please provide a sector.</div>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
                         <input type="email" class="form-control" id="email" name="email" placeholder="Enter Email Address" required>
                         <div class="invalid-feedback">Please provide a valid email address.</div>

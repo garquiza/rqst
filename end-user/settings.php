@@ -80,7 +80,7 @@ $conn->close();
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="container">
                 <div class="header-card">
-                <h2 class="text-center mb-4">User Settings</h2>
+                    <h2 class="text-center mb-4">User Settings</h2>
                 </div>
                 <!-- Feedback Alerts -->
                 <div class="alert alert-success success-alert" id="success-alert" role="alert">
@@ -108,6 +108,10 @@ $conn->close();
                                             <label for="last_name" class="form-label">Last Name</label>
                                             <input type="text" class="form-control" id="last_name" name="last_name" value="<?= htmlspecialchars($userData['last_name']) ?>" required>
                                         </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="sector" class="form-label">Sector</label>
+                                        <input type="text" class="form-control" id="sector" name="sector" value="<?= htmlspecialchars($userData['sector']) ?>" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="email" class="form-label">Email</label>
