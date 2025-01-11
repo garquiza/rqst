@@ -10,6 +10,22 @@ if (!isset($_SESSION['user_id'])) {
 // Include database connection
 include('src/config/database.php');
 
+$currentYear = date("Y");
+$nextYear = $currentYear + 1; // Get next year
+$yearQuery = "
+    SELECT DISTINCT YEAR(date_created) AS year FROM ppmp_list
+    UNION
+    SELECT DISTINCT date_bound AS year FROM ppmp_list
+    ORDER BY year DESC
+";
+$yearResult = mysqli_query($conn, $yearQuery);
+$years = [];
+if ($yearResult) {
+    while ($yearRow = mysqli_fetch_assoc($yearResult)) {
+        $years[] = $yearRow['year'];
+    }
+}
+
 // Fetch PPMP data from the database
 $query = "SELECT ppmp_id, project_title, approver, date_created, status FROM ppmp_list";
 $result = mysqli_query($conn, $query);
@@ -48,6 +64,15 @@ if (!$result) {
                 <div>
                     <span class="total-number">Total Number: <?php echo mysqli_num_rows($result); ?></span>
                 </div>
+                <div class="year-dropdown">
+                    <select class="form-select" id="year-filter" style="width: 200px;">
+                        <option value="all">All</option>
+                        <!-- Dropdown year logic -->
+                        <option value="<?php echo $nextYear; ?>" <?php echo ($nextYear == date("Y") + 1) ? 'selected' : ''; ?>>
+                            <?php echo $nextYear; ?>
+                        </option>
+                    </select>
+                </div>
                 <div class="status-dropdown">
                     <select class="form-select" id="status-filter" style="width: 200px;">
                         <option value="all">All</option>
@@ -63,9 +88,8 @@ if (!$result) {
                 </div>
             </div>
 
-            <div class="search-container">
+            <div class="search-container mb-4">
                 <input type="text" class="form-control" id="search-bar" placeholder="Search by Title or Approver">
-                <button class="btn btn-primary" onclick="performSearch()"><i class="fas fa-search"></i></button>
             </div>
 
             <table class="table table-striped table-hover">
@@ -73,7 +97,7 @@ if (!$result) {
                     <tr>
                         <th>Title</th>
                         <th>Approver</th>
-                        <th>Date</th>
+                        <th>Date Created</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -104,14 +128,11 @@ if (!$result) {
                             </td>
                             <td class="text-justify">
                                 <div class="btn-group" role="group" aria-label="Actions">
-                                <a href="src/process/download_excel_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
+                                    <a href="src/process/download_excel_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
                                         class="btn btn-outline-primary btn-sm"
                                         title="Download PPMP"
                                         style="margin-right: 5px;">
                                         <i class="fas fa-download"></i>
-                                    </a>
-                                    <a href="print_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>" class="btn btn-outline-info btn-sm" title="Print PPMP" style="margin-right: 5px;">
-                                        <i class="fas fa-print"></i>
                                     </a>
                                     <a href="update_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>" class="btn btn-outline-warning btn-sm" title="Edit PPMP" style="margin-right: 5px;">
                                         <i class="fas fa-edit"></i>
@@ -129,11 +150,11 @@ if (!$result) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         const filterDropdown = document.getElementById('status-filter');
         const tableRows = document.querySelectorAll('#ppmp-table tr');
 
-        // Filter table rows based on the selected status
         filterDropdown.addEventListener('change', () => {
             const selectedStatus = filterDropdown.value;
             tableRows.forEach(row => {
@@ -142,18 +163,22 @@ if (!$result) {
             });
         });
 
-        // Search functionality
+        // Function to perform search
         function performSearch() {
             const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+            const tableRows = document.querySelectorAll('#ppmp-table tr');
+
             tableRows.forEach(row => {
                 const title = row.children[0].textContent.toLowerCase();
                 const approver = row.children[1].textContent.toLowerCase();
+                // Check if search term matches title or approver
                 row.style.display = (title.includes(searchTerm) || approver.includes(searchTerm)) ? '' : 'none';
             });
         }
-    </script>
 
-    <script>
+        // Attach the performSearch function to the search bar's input event
+        document.getElementById('search-bar').addEventListener('input', performSearch);
+
         function confirmDelete(ppmpId) {
             Swal.fire({
                 title: 'Are you sure?',

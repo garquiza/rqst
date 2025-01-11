@@ -419,6 +419,7 @@ CREATE TABLE `ppmp_list` (
   `user_id` int(11) UNSIGNED NOT NULL,
   `approver` varchar(100) DEFAULT 'pending',
   `date_created` timestamp NOT NULL DEFAULT current_timestamp(),
+  `date_bound` year(4) DEFAULT NULL,
   `status` enum('approved','pending','rejected','completed') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -477,6 +478,35 @@ CREATE TABLE `procurement_monitoring_report` (
 -- --------------------------------------------------------
 
 --
+
+-- Table structure for table `procurement_titles`
+--
+
+CREATE TABLE `procurement_titles` (
+  `id` int(11) NOT NULL,
+  `page` varchar(50) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `subtitle` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `procurement_titles`
+--
+
+INSERT INTO `procurement_titles` (`id`, `page`, `title`, `subtitle`) VALUES
+(1, 'app.php', 'Annual Procurement Plan', 'Consolidate all the details from the PPMP'),
+(2, 'ppmp_list.php', 'PPMP List (Admin)', 'Manage, track, and approve PPMPs as an administrator.'),
+(3, 'pr.php', 'Admin - Purchase Request List', 'Manage and monitor purchase requests for your organization.'),
+(4, 'pmf.php', 'Procurement Modality Approval Form', NULL),
+(5, 'rfq.php', 'Request for Quotation (RFQ)', NULL),
+(6, 'aoq.php', 'Abstract of Quotation', 'Fill out the project details below'),
+(7, 'reso.php', 'Resolution Form', NULL),
+(8, 'noa.php', 'Notice of Award', 'Please fill out the form below to create a Notice of Award.'),
+(9, 'ntp.php', 'Notice to Proceed', NULL),
+(10, 'po.php', 'Purchase Order (PO)', NULL);
+
+-- --------------------------------------------------------
+
 -- Table structure for table `purchase_orders`
 --
 
@@ -849,6 +879,13 @@ ALTER TABLE `ppmp_list`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Indexes for table `procurement_titles`
+--
+ALTER TABLE `procurement_titles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `page` (`page`);
+
+--
 -- Indexes for table `purchase_orders`
 --
 ALTER TABLE `purchase_orders`
@@ -1038,6 +1075,12 @@ ALTER TABLE `ppmp_form`
 --
 ALTER TABLE `ppmp_list`
   MODIFY `ppmp_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- AUTO_INCREMENT for table `procurement_titles`
+--
+ALTER TABLE `procurement_titles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `purchase_orders`
