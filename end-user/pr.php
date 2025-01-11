@@ -305,42 +305,42 @@ $total_pages = ceil($total_rows / $limit);
             }
         });
     }
-     // Function to change the process status
-function changeStatus(pr_number, action) {
-    Swal.fire({
-        title: `Are you sure you want to ${action} this PR?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: `Yes, ${action}!`,
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Send request to the server to update the status
-            fetch('src/process/update_process_status.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ pr_number, action })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: `${action}d!`,
-                        text: `The purchase request has been ${action}d.`,
-                        icon: 'success'
-                    }).then(() => location.reload()); // Reload to update the table
-                } else {
-                    Swal.fire('Error!', 'There was an issue updating the status.', 'error');
-                }
-            })
-            .catch(error => {
-                Swal.fire('Error!', 'There was an error with the request.', 'error');
-            });
-        }
-    });
-}
+
+    
+    function changeStatus(pr_number, action) {
+        Swal.fire({
+            title: `Are you sure you want to ${action} this PR?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: `Yes, ${action}!`,
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch('src/process/update_process_status.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pr_number, action })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: `${action}d!`,
+                            text: `The purchase request has been ${action}d.`,
+                            icon: 'success'
+                        }).then(() => location.reload()); 
+                    } else {
+                        Swal.fire('Error!', 'There was an issue updating the status.', 'error');
+                    }
+                })
+                .catch(error => {
+                    Swal.fire('Error!', 'There was an error with the request.', 'error');
+                });
+            }
+        });
+    }
     </script>
 </body>
 
