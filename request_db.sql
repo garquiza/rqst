@@ -1277,3 +1277,44 @@ COMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
 ALTER TABLE end_users ADD COLUMN sector VARCHAR(255) NOT NULL AFTER last_name;
+
+CREATE TABLE `categories` (
+  `category_id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_no` varchar(10) NOT NULL,
+  `category_name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+--
+-- Dumping data for table `categories`
+--
+
+INSERT INTO `categories` (`category_id`, `category_no`, `category_name`, `description`, `created_at`, `updated_at`) VALUES
+(25, 'CA-00025', 'Office ', 'opis', '2025-01-10 21:22:34', '2025-01-10 21:23:42');
+
+
+
+CREATE TABLE `items` (
+  `item_id` int(11) NOT NULL AUTO_INCREMENT,
+  `item_no` varchar(50) NOT NULL,
+  `item_name` varchar(255) NOT NULL,
+  `unit_of_measurement` varchar(50) NOT NULL,
+  `category_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`item_id`),
+  FOREIGN KEY (`category_id`) REFERENCES `categories`(`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `items`
+--
+
+INSERT INTO `items` (`item_id`, `item_no`, `item_name`, `unit_of_measurement`, `category_id`, `created_at`, `updated_at`) VALUES
+(30, 'ITEM-0001', 'Chair', 'piece', NULL, '2025-01-10 21:20:41', '2025-01-10 21:21:10'),
+(31, 'ITEM-0002', 'tables', 'piece', NULL, '2025-01-10 21:20:55', '2025-01-10 21:20:55'),
+(32, 'ITEM-0003', 'Bond Paper', 'bundle', 25, '2025-01-10 21:22:48', '2025-01-10 21:23:19');
