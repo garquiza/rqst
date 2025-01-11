@@ -383,22 +383,26 @@ INSERT INTO `pmaf` (`id`, `modality`, `project_title`, `fund`, `mooe_items`, `co
 -- --------------------------------------------------------
 
 --
--- Table structure for table `ppmp_form`
+-- Table structure for table `ppmp_form` ITO MC BAGONG PALIT
 --
 
-CREATE TABLE `ppmp_form` (
-  `ppmp_form_id` int(11) UNSIGNED NOT NULL,
-  `year` varchar(4) NOT NULL,
-  `code` varchar(100) NOT NULL,
-  `general_description` text NOT NULL,
-  `quantity_size` varchar(100) NOT NULL,
-  `estimated_budget` decimal(15,2) NOT NULL,
-  `schedule` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`schedule`)),
-  `ppmp_id` int(11) UNSIGNED NOT NULL,
-  `date_created` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+CREATE TABLE ppmp_form (
+  ppmp_form_id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  year varchar(4) NOT NULL,
+  code varchar(100) NOT NULL,
+  general_description JSON NOT NULL,
+  quantity_size JSON NOT NULL,
+  estimated_budget decimal(15,2) NOT NULL,
+  schedule longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(schedule)),
+  ppmp_id int(11) UNSIGNED NOT NULL,
+  mode_of_procurement varchar(255) NOT NULL,
+  unit_measurement JSON NOT NULL,
+  unit_cost JSON NOT NULL,
+  date_created timestamp NOT NULL DEFAULT current_timestamp(),
+  created_at timestamp NOT NULL DEFAULT current_timestamp(),
+  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 --
 -- Dumping data for table `ppmp_form`
