@@ -279,6 +279,7 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
             event.preventDefault(); // Prevent default form submission
 
             var formData = $(this).serialize(); // Get all form data
+            console.log(formData); // Debug: Check serialized data
 
             $.ajax({
                 url: 'src/process/add_ppmp.php',
