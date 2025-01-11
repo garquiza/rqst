@@ -387,7 +387,7 @@ INSERT INTO `pmaf` (`id`, `modality`, `project_title`, `fund`, `mooe_items`, `co
 --
 
 CREATE TABLE ppmp_form (
-  ppmp_form_id int(11) UNSIGNED NOT NULL,
+  ppmp_form_id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   year varchar(4) NOT NULL,
   code varchar(100) NOT NULL,
   general_description JSON NOT NULL,
