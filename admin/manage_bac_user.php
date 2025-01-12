@@ -24,7 +24,45 @@ $total_pages = ceil($total_users / $items_per_page);
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($current_page - 1) * $items_per_page;
 $paginated_users = array_slice($bac_users, $offset, $items_per_page);
+
+// Fetch the toggle state from the database
+$query = "SELECT updates_enabled FROM settings WHERE id = 1";
+$stmt = $pdo->prepare($query);
+$stmt->execute();
+$settings = $stmt->fetch(PDO::FETCH_ASSOC);
+$toggleState = $settings['updates_enabled'] ?? 0; // Default to 0 if not found
+
+// Handle POST request to update the toggle status
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get the raw POST data
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+
+    // Ensure the expected data exists
+    if (isset($data['enableUpdates'])) {
+        $enableUpdates = $data['enableUpdates'] ? 1 : 0;
+
+        try {
+            // Update the settings table to reflect the status of the toggle where ID=1
+            $query = "UPDATE settings SET updates_enabled = :status WHERE id = 2";
+            $stmt = $pdo->prepare($query);
+            $stmt->execute([':status' => $enableUpdates]);
+
+            // Return success response
+            echo json_encode(['status' => 'success', 'message' => 'Status updated successfully']);
+        } catch (PDOException $e) {
+            // Return any error that occurs during the update
+            echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    } else {
+        // Return error response if 'enableUpdates' is missing
+        echo json_encode(['status' => 'error', 'message' => 'Missing enableUpdates parameter']);
+    }
+    exit(); // Exit the script after processing the POST request
+}
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -49,6 +87,24 @@ $paginated_users = array_slice($bac_users, $offset, $items_per_page);
         .pagination {
             justify-content: center;
         }
+
+        /* Custom style for toggle switch */
+        .form-check-input {
+            width: 60px;
+            height: 34px;
+            background-color: rgb(97, 128, 173);
+            border-radius: 20px;
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-check-input:checked {
+            background-color: #28a745 !important;
+        }
+
+        .form-check-input {
+            transform: scale(1.5);
+        }
     </style>
 </head>
 
@@ -62,6 +118,13 @@ $paginated_users = array_slice($bac_users, $offset, $items_per_page);
             <div class="header-card">
                 <h1 class="mb-4">Manage BAC Users</h1>
                 <p class="mb-0">Below is the list of BAC users.</p>
+                <!-- Toggle Switch for Activating/Deactivating Updates -->
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="toggle-updates" onchange="toggleUpdates(this)" <?php echo $toggleState ? 'checked' : ''; ?>>
+                    <label class="form-check-label" for="toggle-updates">
+                        Enable/Disable Update for PPMP
+                    </label>
+                </div>
             </div>
 
             <!-- Search Bar -->
@@ -209,6 +272,82 @@ $paginated_users = array_slice($bac_users, $offset, $items_per_page);
                         });
                 }
             });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch the initial state from localStorage if it exists
+            const storedState = localStorage.getItem('enableUpdates');
+            const switchElement = document.getElementById('toggle-updates'); // Correct ID for your switch element
+
+            // If the switch element exists
+            if (switchElement) {
+                // If there is a stored state in localStorage
+                if (storedState !== null) {
+                    // Set the switch state from localStorage
+                    switchElement.checked = JSON.parse(storedState);
+                } else {
+                    // If there's no localStorage state, set it based on the database state
+                    const toggleState = <?php echo json_encode($toggleState); ?>; // Get PHP value as JavaScript variable
+                    switchElement.checked = toggleState;
+                }
+
+                // Listen for the switch toggle
+                switchElement.addEventListener('change', function() {
+                    toggleUpdates(switchElement);
+                });
+            } else {
+                console.error('Switch element not found');
+            }
+        });
+
+        function toggleUpdates(switchElement) {
+            const isEnabled = switchElement.checked; // Get the current state of the switch (enabled/disabled)
+
+            // Save the switch state to localStorage
+            localStorage.setItem('enableUpdates', JSON.stringify(isEnabled));
+
+            // Send an AJAX request to the server
+            fetch('', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        enableUpdates: isEnabled // Send the status of the switch
+                    }),
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: `Updates have been ${isEnabled ? 'enabled' : 'disabled'}.`,
+                            icon: 'success',
+                            confirmButtonText: 'Okay'
+                        });
+                    } else {
+                        console.error('Server Error:', data.message);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: `Error updating status: ${data.message}`,
+                            icon: 'error',
+                            confirmButtonText: 'Okay'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch Error:', error);
+                    Swal.fire({
+                        title: 'Failed!',
+                        text: 'Failed to update status. Check console for details.',
+                        icon: 'error',
+                        confirmButtonText: 'Okay'
+                    });
+                });
         }
     </script>
 

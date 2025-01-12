@@ -9,7 +9,40 @@ if (!isset($_SESSION['user_id'])) {
 
 // Include database connection
 include('src/config/database.php');
+$accessQuery = "SELECT start_date, end_date FROM access_dates WHERE id = 1";  // Renaming the query variable
+$accessResult = mysqli_query($conn, $accessQuery);
+$accessDates = mysqli_fetch_assoc($accessResult);
 
+// Check if access dates exist
+if (!$accessDates) {
+    die("Error fetching access dates: " . mysqli_error($conn));
+}
+
+// Convert dates for JavaScript comparison
+$startDate = $accessDates['start_date'];
+$endDate = $accessDates['end_date'];
+
+
+$currentYear = date("Y");
+$nextYear = $currentYear + 1; // Get next year
+$yearQuery = "
+SELECT DISTINCT YEAR(date_created) AS year FROM ppmp_list
+UNION
+SELECT DISTINCT date_bound AS year FROM ppmp_list
+ORDER BY year DESC
+";
+$yearResult = mysqli_query($conn, $yearQuery);
+$years = [];
+if ($yearResult) {
+    while ($yearRow = mysqli_fetch_assoc($yearResult)) {
+        $years[] = $yearRow['year'];
+    }
+}
+
+// Fetch the value of `updates_enabled` from the `settings` table
+$updatesQuery = "SELECT updates_enabled FROM settings WHERE id = 1";
+$updatesResult = mysqli_query($conn, $updatesQuery);
+$updatesEnabled = mysqli_fetch_assoc($updatesResult)['updates_enabled'];
 // Fetch PPMP data from the database
 $query = "SELECT ppmp_id, project_title, approver, date_created, status FROM ppmp_list";
 $result = mysqli_query($conn, $query);
@@ -18,6 +51,9 @@ $result = mysqli_query($conn, $query);
 if (!$result) {
     die("Error fetching data: " . mysqli_error($conn));
 }
+
+
+
 ?>
 
 <!DOCTYPE html>
@@ -41,12 +77,29 @@ if (!$result) {
         <div class="header-card mb-4">
             <h1 class="display-5 mb-2">PPMP List</h1>
             <p class="text-light">Manage and track the status of PPMPs.</p>
+            <!-- Display the Access Dates -->
+            <div class="alert alert-info mt-3">
+                <strong>Access Dates:</strong>
+                <?php
+                // Display the fetched access dates
+                echo "From <strong>" . date("F j, Y", strtotime($startDate)) . "</strong> to <strong>" . date("F j, Y", strtotime($endDate)) . "</strong>";
+                ?>
+            </div>
         </div>
 
         <div class="table-container">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                     <span class="total-number">Total Number: <?php echo mysqli_num_rows($result); ?></span>
+                </div>
+                <div class="year-dropdown">
+                    <select class="form-select" id="year-filter" style="width: 200px;">
+                        <option value="all">All</option>
+                        <!-- Dropdown year logic -->
+                        <option value="<?php echo $nextYear; ?>" <?php echo ($nextYear == date("Y") + 1) ? 'selected' : ''; ?>>
+                            <?php echo $nextYear; ?>
+                        </option>
+                    </select>
                 </div>
                 <div class="status-dropdown">
                     <select class="form-select" id="status-filter" style="width: 200px;">
@@ -63,9 +116,8 @@ if (!$result) {
                 </div>
             </div>
 
-            <div class="search-container">
+            <div class="search-container mb-4">
                 <input type="text" class="form-control" id="search-bar" placeholder="Search by Title or Approver">
-                <button class="btn btn-primary" onclick="performSearch()"><i class="fas fa-search"></i></button>
             </div>
 
             <table class="table table-striped table-hover">
@@ -73,7 +125,7 @@ if (!$result) {
                     <tr>
                         <th>Title</th>
                         <th>Approver</th>
-                        <th>Date</th>
+                        <th>Date Created</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -104,16 +156,16 @@ if (!$result) {
                             </td>
                             <td class="text-justify">
                                 <div class="btn-group" role="group" aria-label="Actions">
-                                <a href="src/process/download_excel_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
+                                    <a href="src/process/download_excel_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
                                         class="btn btn-outline-primary btn-sm"
                                         title="Download PPMP"
                                         style="margin-right: 5px;">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                    <a href="print_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>" class="btn btn-outline-info btn-sm" title="Print PPMP" style="margin-right: 5px;">
-                                        <i class="fas fa-print"></i>
-                                    </a>
-                                    <a href="update_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>" class="btn btn-outline-warning btn-sm" title="Edit PPMP" style="margin-right: 5px;">
+                                    <a href="update_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
+                                        class="btn btn-outline-warning btn-sm edit-btn"
+                                        title="Edit PPMP"
+                                        style="margin-right: 5px;">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <button class="btn btn-outline-danger btn-sm" title="Delete PPMP" onclick="confirmDelete('<?php echo $row['ppmp_id']; ?>')">
@@ -129,11 +181,11 @@ if (!$result) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         const filterDropdown = document.getElementById('status-filter');
         const tableRows = document.querySelectorAll('#ppmp-table tr');
 
-        // Filter table rows based on the selected status
         filterDropdown.addEventListener('change', () => {
             const selectedStatus = filterDropdown.value;
             tableRows.forEach(row => {
@@ -142,18 +194,22 @@ if (!$result) {
             });
         });
 
-        // Search functionality
+        // Function to perform search
         function performSearch() {
             const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+            const tableRows = document.querySelectorAll('#ppmp-table tr');
+
             tableRows.forEach(row => {
                 const title = row.children[0].textContent.toLowerCase();
                 const approver = row.children[1].textContent.toLowerCase();
+                // Check if search term matches title or approver
                 row.style.display = (title.includes(searchTerm) || approver.includes(searchTerm)) ? '' : 'none';
             });
         }
-    </script>
 
-    <script>
+        // Attach the performSearch function to the search bar's input event
+        document.getElementById('search-bar').addEventListener('input', performSearch);
+
         function confirmDelete(ppmpId) {
             Swal.fire({
                 title: 'Are you sure?',
@@ -203,8 +259,52 @@ if (!$result) {
                     });
                 });
         }
-    </script>
+        // Pass PHP variables to JavaScript with renamed variables to avoid conflict
+        const phpAccessStartDate = '<?php echo $startDate; ?>';
+        const phpAccessEndDate = '<?php echo $endDate; ?>';
 
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get today's date
+            const today = new Date();
+
+            // Parse the access dates from PHP (using renamed variables)
+            const accessStart = new Date(phpAccessStartDate);
+            const accessEnd = new Date(phpAccessEndDate);
+
+            // Get the "Create PPMP" button element
+            const createButton = document.querySelector('a[href="create_ppmp.php"]');
+
+            // Event listener for when the "Create PPMP" button is clicked
+            createButton.addEventListener('click', function(event) {
+                // If today is outside the access dates
+                if (today < accessStart || today > accessEnd) {
+                    event.preventDefault(); // Prevent navigation to the "Create PPMP" page
+
+                    // Show the "Access Denied" popup
+                    Swal.fire({
+                        title: 'Access Denied!',
+                        text: 'You can only create PPMPs within the allowed access dates.',
+                        icon: 'error',
+                        confirmButtonText: 'Okay'
+                    }).then(() => {
+                        // After closing the popup, disable the "Create PPMP" button
+                        createButton.style.pointerEvents = 'none'; // Disable button
+                        createButton.style.opacity = '0.5'; // Make it appear disabled
+                    });
+                }
+            });
+        });
+        const updatesEnabled = <?php echo $updatesEnabled; ?>;
+
+        // Disable "Edit" buttons if updates_enabled is 0
+        if (updatesEnabled === 0) {
+            const editButtons = document.querySelectorAll('.edit-btn');
+            editButtons.forEach(button => {
+                button.classList.add('disabled');
+                button.setAttribute('disabled', 'true');
+            });
+        }
+    </script>
 </body>
 
 </html>

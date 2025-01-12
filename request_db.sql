@@ -383,22 +383,26 @@ INSERT INTO `pmaf` (`id`, `modality`, `project_title`, `fund`, `mooe_items`, `co
 -- --------------------------------------------------------
 
 --
--- Table structure for table `ppmp_form`
+-- Table structure for table `ppmp_form` ITO MC BAGONG PALIT
 --
 
-CREATE TABLE `ppmp_form` (
-  `ppmp_form_id` int(11) UNSIGNED NOT NULL,
-  `year` varchar(4) NOT NULL,
-  `code` varchar(100) NOT NULL,
-  `general_description` text NOT NULL,
-  `quantity_size` varchar(100) NOT NULL,
-  `estimated_budget` decimal(15,2) NOT NULL,
-  `schedule` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`schedule`)),
-  `ppmp_id` int(11) UNSIGNED NOT NULL,
-  `date_created` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+CREATE TABLE ppmp_form (
+  ppmp_form_id int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  year varchar(4) NOT NULL,
+  code varchar(100) NOT NULL,
+  general_description JSON NOT NULL,
+  quantity_size JSON NOT NULL,
+  estimated_budget decimal(15,2) NOT NULL,
+  schedule longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(schedule)),
+  ppmp_id int(11) UNSIGNED NOT NULL,
+  mode_of_procurement varchar(255) NOT NULL,
+  unit_measurement JSON NOT NULL,
+  unit_cost JSON NOT NULL,
+  date_created timestamp NOT NULL DEFAULT current_timestamp(),
+  created_at timestamp NOT NULL DEFAULT current_timestamp(),
+  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 --
 -- Dumping data for table `ppmp_form`
@@ -419,6 +423,7 @@ CREATE TABLE `ppmp_list` (
   `user_id` int(11) UNSIGNED NOT NULL,
   `approver` varchar(100) DEFAULT 'pending',
   `date_created` timestamp NOT NULL DEFAULT current_timestamp(),
+  `date_bound` year(4) DEFAULT NULL,
   `status` enum('approved','pending','rejected','completed') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -477,6 +482,35 @@ CREATE TABLE `procurement_monitoring_report` (
 -- --------------------------------------------------------
 
 --
+
+-- Table structure for table `procurement_titles`
+--
+
+CREATE TABLE `procurement_titles` (
+  `id` int(11) NOT NULL,
+  `page` varchar(50) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `subtitle` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `procurement_titles`
+--
+
+INSERT INTO `procurement_titles` (`id`, `page`, `title`, `subtitle`) VALUES
+(1, 'app.php', 'Annual Procurement Plan', 'Consolidate all the details from the PPMP'),
+(2, 'ppmp_list.php', 'PPMP List (Admin)', 'Manage, track, and approve PPMPs as an administrator.'),
+(3, 'pr.php', 'Admin - Purchase Request List', 'Manage and monitor purchase requests for your organization.'),
+(4, 'pmf.php', 'Procurement Modality Approval Form', NULL),
+(5, 'rfq.php', 'Request for Quotation (RFQ)', NULL),
+(6, 'aoq.php', 'Abstract of Quotation', 'Fill out the project details below'),
+(7, 'reso.php', 'Resolution Form', NULL),
+(8, 'noa.php', 'Notice of Award', 'Please fill out the form below to create a Notice of Award.'),
+(9, 'ntp.php', 'Notice to Proceed', NULL),
+(10, 'po.php', 'Purchase Order (PO)', NULL);
+
+-- --------------------------------------------------------
+
 -- Table structure for table `purchase_orders`
 --
 
@@ -849,6 +883,13 @@ ALTER TABLE `ppmp_list`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Indexes for table `procurement_titles`
+--
+ALTER TABLE `procurement_titles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `page` (`page`);
+
+--
 -- Indexes for table `purchase_orders`
 --
 ALTER TABLE `purchase_orders`
@@ -1038,6 +1079,12 @@ ALTER TABLE `ppmp_form`
 --
 ALTER TABLE `ppmp_list`
   MODIFY `ppmp_id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
+-- AUTO_INCREMENT for table `procurement_titles`
+--
+ALTER TABLE `procurement_titles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `purchase_orders`
@@ -1232,3 +1279,82 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+----arquiza
+ALTER TABLE end_users ADD COLUMN sector VARCHAR(255) NOT NULL AFTER last_name;
+
+CREATE TABLE `categories` (
+  `category_id` int(11) NOT NULL AUTO_INCREMENT,
+  `category_no` varchar(10) NOT NULL,
+  `category_name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+--
+-- Dumping data for table `categories`
+--
+
+INSERT INTO `categories` (`category_id`, `category_no`, `category_name`, `description`, `created_at`, `updated_at`) VALUES
+(25, 'CA-00025', 'Office ', 'opis', '2025-01-10 21:22:34', '2025-01-10 21:23:42');
+
+
+
+CREATE TABLE `items` (
+  `item_id` int(11) NOT NULL AUTO_INCREMENT,
+  `item_no` varchar(50) NOT NULL,
+  `item_name` varchar(255) NOT NULL,
+  `unit_of_measurement` varchar(50) NOT NULL,
+  `category_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`item_id`),
+  FOREIGN KEY (`category_id`) REFERENCES `categories`(`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `items`
+--
+
+INSERT INTO `items` (`item_id`, `item_no`, `item_name`, `unit_of_measurement`, `category_id`, `created_at`, `updated_at`) VALUES
+(30, 'ITEM-0001', 'Chair', 'piece', NULL, '2025-01-10 21:20:41', '2025-01-10 21:21:10'),
+(31, 'ITEM-0002', 'tables', 'piece', NULL, '2025-01-10 21:20:55', '2025-01-10 21:20:55'),
+(32, 'ITEM-0003', 'Bond Paper', 'bundle', 25, '2025-01-10 21:22:48', '2025-01-10 21:23:19');
+=======
+-- Table for access dates
+
+CREATE TABLE `access_dates` (
+  `id` int(11) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT INTO `access_dates` (`id`, `start_date`, `end_date`) VALUES
+(1, '2025-01-11', '2025-01-30');
+
+ALTER TABLE `access_dates`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `access_dates`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+
+--Table for 'enable/disable' Update PPMP 
+CREATE TABLE `settings` (
+  `id` int(11) NOT NULL,
+  `updates_enabled` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+INSERT INTO `settings` (`id`, `updates_enabled`) VALUES
+(1, 0),
+(2, 0);
+
+ALTER TABLE `settings`
+  ADD PRIMARY KEY (`id`);
+
+ALTER TABLE `settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
