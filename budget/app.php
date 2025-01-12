@@ -71,6 +71,16 @@ $countResult = mysqli_query($conn, $countQuery);
 $countRow = mysqli_fetch_assoc($countResult);
 $totalRows = $countRow['total'];
 $totalPages = ceil($totalRows / $limit);
+$current_page = 'app.php';
+// Fetch procurement titles
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+if ($titleResult) {
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -100,8 +110,8 @@ $totalPages = ceil($totalRows / $limit);
 
         <div class="content flex-grow-1" style="margin-left: 250px; padding: 20px;">
             <div class="header-card">
-                <h1 class="mb-4">Annual Procurement Plan</h1>
-                <p class="mb-0">Description</p>
+                <h1 class="mb-4"><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Annual Procurement Plan'; ?></h1>
+                <p class="mb-0"><?= isset($titles[$current_page]) ? $titles[$current_page]['subtitle'] : 'Description'; ?></p>
             </div>
 
             <div class="table-container">

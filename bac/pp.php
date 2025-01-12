@@ -20,7 +20,7 @@ $processes = [
     'APP' => ['label' => 'Annual Procurement Plan', 'link' => 'app.php'],
     'PPMP' => ['label' => 'Project Procurement Management Plan', 'link' => 'ppmp_list.php'],
     'PR' => ['label' => 'Purchase Request', 'link' => 'pr.php'],
-    'PMAF' => ['label' => 'Procurement Management Assessment Form', 'link' => 'pmf.php'],
+    'PMAF' => ['label' => 'Procurement Modality Approval Form', 'link' => 'pmf.php'],
     'RFQ' => ['label' => 'Request for Quotation', 'link' => 'rfq.php'],
     'AOQ' => ['label' => 'Abstract of Quotation', 'link' => 'aoq.php'],
     'RESO' => ['label' => 'Resolution', 'link' => 'reso.php'],
