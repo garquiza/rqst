@@ -28,6 +28,11 @@ $stmt = $pdo->prepare($query);
 $stmt->execute();
 $latestSavings = $stmt->fetch(PDO::FETCH_ASSOC)['savings'] ?? 0;
 
+// Fetch total procured items
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM notice_of_award");
+$stmt->execute();
+$total_procured = $stmt->fetchColumn();
+
 
 $query = "SELECT status, COUNT(*) as count FROM purchase_requests GROUP BY status";
 $stmt = $pdo->prepare($query);
@@ -189,7 +194,7 @@ foreach ($monthlyResults as $row) {
                 <div class="col">
                     <div class="card text-center border-0 shadow-sm">
                         <div class="card-body">
-                            <h5 class="card-title">##</h5>
+                            <h5 class="card-title"><?php echo $total_procured; ?></h5>
                             <p class="card-text">Total Procured</p>
                         </div>
                     </div>
