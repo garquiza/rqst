@@ -16,6 +16,17 @@ $query = "SELECT project_title FROM rfq";
 $stmt = $pdo->prepare($query);
 $stmt->execute();
 $project_titles = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+$current_page = 'noa.php';
+
+// Fetch procurement titles
+$titleQuery = $pdo->prepare("SELECT * FROM procurement_titles");
+$titleQuery->execute();
+$titles = [];
+
+while ($titleRow = $titleQuery->fetch(PDO::FETCH_ASSOC)) {
+    $titles[$titleRow['page']] = $titleRow;
+}
 ?>
 
 <!DOCTYPE html>
@@ -55,8 +66,7 @@ $project_titles = $stmt->fetchAll(PDO::FETCH_COLUMN);
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card">
-                <h1 class="mb-4">Notice of Award</h1>
-                <p class="mb-0">Please fill out the form below to create a Notice of Award.</p>
+                <h2><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Notice of Award'; ?></h2>
             </div>
 
             <div class="card form-card">

@@ -114,24 +114,21 @@
 
 <body>
     <nav class="sidebar">
-        <h5 class="text-center" ><i class="fas fa-cogs"></i> End-User Panel</h5>
+        <h5 class="text-center"><i class="fas fa-cogs"></i> End-User Panel</h5>
         <ul>
             <!-- Dashboard Link -->
             <li>
                 <a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             </li>
 
+            <!-- PPMP -->
+            <li>
+                <a href="ppmp_list.php"><i class="fas fa-clipboard"></i> Project Procurement Management</a>
+            </li>
+
             <!-- Purchase Request Link -->
             <li>
                 <a href="pr.php"><i class="fas fa-receipt"></i> Purchase Request</a>
-            </li>
-
-            <!-- PPMP Dropdown -->
-            <li class="dropdown">
-                <a href="#"><i class="fas fa-clipboard"></i> PPMP <i class="fas fa-chevron-down ms-auto"></i></a>
-                <ul>
-                    <li><a href="ppmp_list.php"><i class="fas fa-list"></i> View List</a></li>
-                </ul>
             </li>
 
             <!-- Settings Link -->
@@ -161,7 +158,7 @@
         function confirmLogout() {
             Swal.fire({
                 title: 'Are you sure you want to logout?',
-                text: 'You will need to log in again to access the admin panel.',
+                text: 'You will need to log in again to access your account.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',

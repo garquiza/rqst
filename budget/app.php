@@ -15,12 +15,27 @@ $limit = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
-$query = "SELECT ppmp_list.ppmp_id, ppmp_list.project_title, ppmp_form.code, app.pmo_end_user, app.early_procurement_activity, 
-            app.mode_of_procurement, app.advertisement_posting_ib_rei, app.submission_opening_bids, app.notice_of_award, 
-            app.contract_signing, app.source_of_funds, app.total, app.mooe, app.co, app.remarks
-          FROM ppmp_list
+$query = "SELECT 
+            ppmp_list.ppmp_id, 
+            ppmp_list.project_title, 
+            ppmp_form.code, 
+            end_users.sector AS pmo_end_user, 
+            app.early_procurement_activity, 
+            ppmp_form.mode_of_procurement, 
+            app.advertisement_posting_ib_rei, 
+            app.submission_opening_bids, 
+            app.notice_of_award, 
+            app.contract_signing, 
+            app.source_of_funds, 
+            app.total, 
+            app.mooe, 
+            app.co, 
+            app.remarks
+          FROM 
+            ppmp_list
           LEFT JOIN app ON ppmp_list.ppmp_id = app.ppmp_id
           LEFT JOIN ppmp_form ON ppmp_list.ppmp_id = ppmp_form.ppmp_id
+          LEFT JOIN end_users ON ppmp_list.user_id = end_users.id
           WHERE ppmp_list.status = 'approved'";
 
 if ($yearFilter) {

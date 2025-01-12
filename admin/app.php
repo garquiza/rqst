@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once '../admin/src/config/database.php';
-$current_page = 'app.php';
 
 $yearFilter = isset($_GET['year']) ? $_GET['year'] : '';
 
@@ -54,6 +53,7 @@ if (!$result) {
 
 $currentYear = date('Y');
 
+$current_page = 'app.php';
 // Fetch procurement titles
 $titleQuery = "SELECT * FROM procurement_titles";
 $titleResult = mysqli_query($conn, $titleQuery);
