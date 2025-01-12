@@ -21,15 +21,18 @@ $approvedProjects = $projectQuery->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch PRs for the project title from the database
 $prQuery = $pdo->prepare("  
-    SELECT pr.pr_number, end_users.first_name, end_users.last_name
+    SELECT pr.pr_number, end_users.sector
     FROM purchase_requests AS pr
     INNER JOIN end_users ON pr.end_user_id = end_users.id
     INNER JOIN ppmp_list ON pr.ppmp_id = ppmp_list.ppmp_id
     WHERE ppmp_list.project_title = :projectTitle AND pr.status = 'Approved'
 ");
 
+
 $prQuery->execute(['projectTitle' => $projectTitle]);
 $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
+
+
 ?>
 
 <!DOCTYPE html>
@@ -65,17 +68,14 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
                         <strong>Project Title</strong>
                     </div>
                     <div class="card-body">
-                        <select id="projectTitle" name="project_title" class="form-select">
-                            <option value="">-- Select a Project Title --</option>
-                            <?php foreach ($approvedProjects as $project): ?>
-                                <option value="<?php echo htmlspecialchars($project['project_title']); ?>"
-                                    <?php echo ($projectTitle === $project['project_title']) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($project['project_title']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div>
+                            <label for="project_title">Project Title</label>
+                            <input type="text" id="project_title" name="project_title"  class="form-control"
+                                value="<?php echo htmlspecialchars($projectTitle); ?>" readonly>
+                        </div>
                     </div>
                 </div>
+
 
                 <!-- Row 1: PR Request Number and End-User -->
                 <div class="card section-card mb-2">
@@ -89,16 +89,21 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
                                 <select id="prRequestNumber" name="pr_request_number" class="form-select">
                                     <option value="">-- Select PR Request Number --</option>
                                     <?php foreach ($approvedPRs as $pr): ?>
-                                        <option value="<?php echo $pr['pr_number']; ?>">
-                                            <?php echo $pr['pr_number'] . " - " . $pr['first_name'] . " " . $pr['last_name']; ?>
+                                        <option value="<?php echo $pr['pr_number']; ?>" 
+                                            data-enduser="<?php echo $pr['sector']; ?>">
+                                            <?php echo $pr['pr_number']; ?>
                                         </option>
+
                                     <?php endforeach; ?>
                                 </select>
                             </div>
+
+                            <!-- End-User Field -->
                             <div class="col-md-6 mb-3">
                                 <label for="endUser" class="form-label">End-User</label>
                                 <input type="text" id="endUser" name="end_user" class="form-control" placeholder="End User Name" readonly>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -234,21 +239,22 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
             }
         });
 
-        // Populate End-User field when PR Request Number changes
-        document.getElementById('prRequestNumber').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex].text;
-            const endUserInput = document.getElementById('endUser');
 
-            if (selectedOption) {
-                const endUserName = selectedOption.split(' - ')[1];
-                endUserInput.value = endUserName;
-            } else {
-                endUserInput.value = '';
-            }
-        });
+
+
+
     </script>
     <script>
+
+        document.getElementById('prRequestNumber').addEventListener('change', function () {
+            var selectedOption = this.options[this.selectedIndex];
+            var endUserName = selectedOption.getAttribute('data-enduser');
+            document.getElementById('endUser').value = endUserName ? endUserName : '';
+        });
+
         let rowCount = 0;
+
+        
 
         document.getElementById('addRowForm').addEventListener('submit', function(event) {
             event.preventDefault();

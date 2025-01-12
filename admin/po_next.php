@@ -226,9 +226,9 @@ if ($noa_id) {
                                     showDenyButton: true,
                                     denyButtonText: 'Download'
                                 }).then((result) => {
-                                    if (result.isConfirmed) {
+                                    if(result.isConfirmed){
                                         window.location.href = 'pmr.php'; // Redirect to the PMR page
-                                    } else if (result.isDenied) {
+                                    }else if(result.isDenied){
                                         window.location.href = `src/process/download_pdf_po.php?purchase_order_id=${data.purchase_order_id}`;
                                     }
                                 });
@@ -240,9 +240,10 @@ if ($noa_id) {
                             console.error('Error:', error);
                             Swal.fire('Error!', 'Something went wrong during submission.', 'error');
                         });
-                }
+                } 
             });
         });
+
     </script>
 </body>
 

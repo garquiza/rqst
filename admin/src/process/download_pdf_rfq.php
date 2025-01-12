@@ -1,5 +1,5 @@
 <?php
-require_once(__DIR__ . '/../../../vendor/tecnickcom/tcpdf/tcpdf.php');
+require_once('../../vendor/autoload.php');
 require_once('../config/pdo.php');
 
 // Get RFQ ID from URL
@@ -33,10 +33,8 @@ if (!$rfq) {
     die('RFQ not found');
 }
 
-class MYPDF extends TCPDF
-{
-    public function Header()
-    {
+class MYPDF extends TCPDF {
+    public function Header() {
         // Set font for university name
         $this->SetFont('helvetica', 'B', 12);
         $this->Cell(0, 10, 'TECHNOLOGICAL UNIVERSITY OF THE PHILIPPINES', 0, 1, 'C');
@@ -54,16 +52,15 @@ class MYPDF extends TCPDF
         // Add RFQ Form title
         $this->SetFont('helvetica', 'B', 12);
         $this->Cell(0, 10, 'REQUEST FOR QUOTATION FORM', 0, 1, 'C');
-
+        
         // Add more space after the header
         $this->Ln(5);
     }
-
-    public function Footer()
-    {
+    
+    public function Footer() {
         $this->SetY(-15);
         $this->SetFont('helvetica', 'I', 8);
-        $this->Cell(0, 10, 'Page ' . $this->getAliasNumPage() . '/' . $this->getAliasNbPages(), 0, false, 'C');
+        $this->Cell(0, 10, 'Page '.$this->getAliasNumPage().'/'.$this->getAliasNbPages(), 0, false, 'C');
     }
 }
 
@@ -121,7 +118,7 @@ $style = '
 $html = $style . '
 <table width="100%">
     <tr style="text-align: right">
-        <th><b>QUOTATION NUMBER: ' . $rfq_id . '</b></th>
+        <th><b>QUOTATION NUMBER: '.$rfq_id.'</b></th>
     </tr>
     <tr>
         <td>
@@ -200,26 +197,26 @@ $html = $style . '
     <tbody>';
 
 $total = 0;
-foreach ($rfq_items as $index => $item) {
+foreach($rfq_items as $index => $item) {
     $itemTotal = $item['quantity'] * $item['unit_cost'];
     $total += $itemTotal;
     $html .= '
         <tr>
-            <td>' . ($index + 1) . '</td>
-            <td>' . $item['quantity'] . '</td>
-            <td>' . $item['unit'] . '</td>
-            <td>' . $item['general_name'] . '</td>
-            <td>' . $item['tech_specification'] . '</td>
-            <td align="right">P' . number_format($item['unit_cost'], 2) . '</td>
-            <td>' . $item['bidder_offer_specification'] . '</td>
-            <td align="right">P' . ($item['quoted_unit_price'] ? number_format($item['quoted_unit_price'], 2) : '-') . '</td>
+            <td>'.($index + 1).'</td>
+            <td>'.$item['quantity'].'</td>
+            <td>'.$item['unit'].'</td>
+            <td>'.$item['general_name'].'</td>
+            <td>'.$item['tech_specification'].'</td>
+            <td align="right">P'.number_format($item['unit_cost'], 2).'</td>
+            <td>'.$item['bidder_offer_specification'].'</td>
+            <td align="right">P'.($item['quoted_unit_price'] ? number_format($item['quoted_unit_price'], 2) : '-').'</td>
         </tr>';
 }
 
 $html .= '
         <tr>
             <td colspan="7" align="right"><strong>Total Amount:</strong></td>
-            <td align="right"><strong>P' . number_format($total, 2) . '</strong></td>
+            <td align="right"><strong>P'.number_format($total, 2).'</strong></td>
         </tr>
     </tbody>
 </table>';
@@ -330,4 +327,5 @@ $new_html = $style .  '
 $pdf->writeHTML($new_html, true, false, true, false, '');
 
 // Close and output PDF document
-$pdf->Output('RFQ_' . $rfq_id . '.pdf', 'D');
+$pdf->Output('RFQ_'.$rfq_id.'.pdf', 'D');
+?>

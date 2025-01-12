@@ -1,6 +1,6 @@
 <?php
 
-require_once(__DIR__ . '/../../../vendor/tecnickcom/tcpdf/tcpdf.php');
+require_once('../../vendor/autoload.php');
 require_once('../config/database.php');
 
 ob_start(); // Start output buffering to capture any accidental output
@@ -27,16 +27,14 @@ if (isset($_GET['noa_id'])) {
         $projectTitle = $row['project_title'];
         $dateToday = date('F d, Y');
 
-        class MYPDF extends TCPDF
-        {
-            public function Header()
-            {
+        class MYPDF extends TCPDF {
+            public function Header() {
                 $this->SetFont('helvetica', 'B', 10);
-
+                
                 // Add image using TCPDF Image method
                 // Parameters: Image(file, x, y, width, height)
                 $this->Image('../../../assets/images/logo.jpg', 20, 6, 17); // Adjust coordinates and size as needed
-
+                
                 $html = <<<EOD
                 <div style="margin-top: 10px;"></div> 
                 <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;width:100%;text-align:center;">
@@ -54,6 +52,7 @@ if (isset($_GET['noa_id'])) {
                 EOD;
                 $this->writeHTML($html, true, false, false, false, '');
             }
+            
         }
 
         // Create an instance of TCPDF
@@ -72,7 +71,7 @@ if (isset($_GET['noa_id'])) {
 
         // Add a page
         $pdf->AddPage();
-
+        
 
         // HTML content using the fetched data
         $html = <<<EOD
@@ -173,3 +172,5 @@ if (isset($_GET['noa_id'])) {
 
 ob_end_flush(); //End output buffering.
 $conn->close(); //Close the database connection.
+?>
+
