@@ -22,6 +22,12 @@ $stmt = $pdo->prepare($query);
 $stmt->execute();
 $latestBudget = $stmt->fetch(PDO::FETCH_ASSOC)['amount'] ?? 0;
 
+// Fetch the latest total savings amount from the fund table
+$query = "SELECT savings FROM fund";
+$stmt = $pdo->prepare($query);
+$stmt->execute();
+$latestSavings = $stmt->fetch(PDO::FETCH_ASSOC)['savings'] ?? 0;
+
 
 $query = "SELECT status, COUNT(*) as count FROM purchase_requests GROUP BY status";
 $stmt = $pdo->prepare($query);
@@ -117,7 +123,6 @@ foreach ($monthlyResults as $row) {
             <!-- Card Grid -->
             <div class="row row-cols-2 row-cols-md-4 g-3">
                 <!-- Total Budget Cost Card -->
-
                 <div class="col">
                     <a href="total_budget_cost.php" class="text-decoration-none">
                         <div class="card text-center border-0 shadow-sm">
@@ -134,7 +139,8 @@ foreach ($monthlyResults as $row) {
                     <a href="total_savings.php" class="text-decoration-none">
                         <div class="card text-center border-0 shadow-sm">
                             <div class="card-body">
-                                <h5 class="card-title">##</h5>
+                                <h5 class="card-title">₱ <?php echo number_format($latestSavings, 2); ?>
+                                </h5>
                                 <p class="card-text">Total Savings</p>
                             </div>
                         </div>
@@ -185,30 +191,6 @@ foreach ($monthlyResults as $row) {
                         <div class="card-body">
                             <h5 class="card-title">##</h5>
                             <p class="card-text">Total Procured</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card text-center border-0 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">##</h5>
-                            <p class="card-text">Abstract Pending PR</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card text-center border-0 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">##</h5>
-                            <p class="card-text">Proceeding Pending PR</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card text-center border-0 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">##</h5>
-                            <p class="card-text">Award Pending PR</p>
                         </div>
                     </div>
                 </div>
