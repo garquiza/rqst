@@ -40,7 +40,6 @@ if ($yearResult) {
     }
 }
 
-// Fetch the PPMP list
 $query = "
     SELECT 
         pl.ppmp_id, 
@@ -49,15 +48,24 @@ $query = "
         pl.date_created, 
         pl.date_bound, 
         pl.status,
-        pf.schedule
+        pf.ppmp_form_id,  -- Include ppmp_form_id here
+        pf.schedule,
+        eu.sector  -- Include sector here
     FROM 
         ppmp_list pl
     LEFT JOIN 
         ppmp_form pf 
     ON 
         pl.ppmp_id = pf.ppmp_id
+    LEFT JOIN 
+        end_users eu
+    ON
+        pl.user_id = eu.id  -- Join with the end_users table to fetch sector
 ";
+
 $result = mysqli_query($conn, $query);
+
+// Check if query succeeded
 if (!$result) {
     die("Error fetching data: " . mysqli_error($conn));
 }
@@ -140,7 +148,7 @@ if (!$result) {
         </div>
 
         <div class="search-container mb-4">
-            <input type="text" class="form-control" id="search-bar" placeholder="Search by Title or Approver">
+            <input type="text" class="form-control" id="search-bar" placeholder="Search by Title or Approver or Sector">
         </div>
 
         <table class="table table-striped table-hover">
@@ -151,9 +159,11 @@ if (!$result) {
                     <th>Date Created</th>
                     <th>For Next Year</th>
                     <th>Status</th>
+                    <th>Sector</th> <!-- Add this line for the sector column -->
                     <th>Action</th>
                 </tr>
             </thead>
+
             <tbody id="ppmp-table">
                 <?php
                 $previousYear = date("Y") - 1; // Define the previous year
@@ -200,10 +210,11 @@ if (!$result) {
                         <td><?php echo htmlspecialchars($row['project_title']); ?></td>
                         <td><?php echo htmlspecialchars($row['approver']); ?></td>
                         <td><?php echo date("F j, Y", strtotime($row['date_created'])); ?></td>
-                        <td><?php echo $displaySchedule ?: "N/A"; ?></td> <!-- Display "For Year" -->
+                        <td><?php echo $displaySchedule ?: "N/A"; ?></td>
                         <td>
                             <span class="badge <?php echo $statusClass; ?>"><?php echo ucfirst($row['status']); ?></span>
                         </td>
+                        <td><?php echo htmlspecialchars($row['sector']); ?></td> <!-- Display sector here -->
                         <td class="text-justify">
                             <div class="btn-group" role="group" aria-label="Actions">
 
@@ -217,10 +228,11 @@ if (!$result) {
                                     </button>
 
                                 <?php else: ?>
-                                    <a href="../admin/edit_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>" class="btn btn-outline-warning btn-sm" title="Update PPMP" style="margin-right: 5px;">
+                                    <a href="../admin/edit_ppmp.php?ppmp_form_id=<?php echo $row['ppmp_form_id']; ?>" class="btn btn-outline-warning btn-sm" title="Update PPMP" style="margin-right: 5px;">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                 <?php endif; ?>
+
 
                                 <button class="btn btn-outline-danger btn-sm" title="Delete PPMP" onclick="confirmDelete('<?php echo $row['ppmp_id']; ?>')">
                                     <i class="fas fa-trash-alt"></i>
@@ -287,8 +299,10 @@ if (!$result) {
             tableRows.forEach(row => {
                 const title = row.children[0].textContent.toLowerCase();
                 const approver = row.children[1].textContent.toLowerCase();
-                // Check if search term matches title or approver
-                row.style.display = (title.includes(searchTerm) || approver.includes(searchTerm)) ? '' : 'none';
+                const sector = row.children[5]?.textContent.toLowerCase(); // Check if the sector column exists (index 5)
+
+                // Check if search term matches title, approver, or sector
+                row.style.display = (title.includes(searchTerm) || approver.includes(searchTerm) || (sector && sector.includes(searchTerm))) ? '' : 'none';
             });
         }
 

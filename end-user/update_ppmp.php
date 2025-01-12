@@ -10,11 +10,27 @@ if (!isset($_SESSION['user_id'])) {
 // Include database connection
 include('src/config/database.php');
 
-// Check if ppmp_id is set in the URL
-if (isset($_GET['ppmp_id'])) {
-    $ppmp_id = intval($_GET['ppmp_id']);
+// Check if ppmp_form_id is set in the URL
+if (isset($_GET['ppmp_form_id'])) {
+    $ppmp_form_id = intval($_GET['ppmp_form_id']);
 
-    // Fetch the existing PPMP data
+    // Fetch the corresponding ppmp_id from ppmp_form table
+    $query = "SELECT ppmp_id FROM ppmp_form WHERE ppmp_form_id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("i", $ppmp_form_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    // Check if the ppmp_form_id exists
+    if ($result->num_rows === 0) {
+        die("PPMP Form not found.");
+    }
+
+    // Fetch the ppmp_id related to the ppmp_form_id
+    $ppmpForm = $result->fetch_assoc();
+    $ppmp_id = $ppmpForm['ppmp_id'];
+
+    // Now, fetch the corresponding PPMP data from ppmp_list using ppmp_id
     $query = "SELECT * FROM ppmp_list WHERE ppmp_id = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $ppmp_id);
@@ -26,13 +42,16 @@ if (isset($_GET['ppmp_id'])) {
         die("PPMP not found.");
     }
 
+    // Fetch the PPMP data
     $ppmp = $result->fetch_assoc();
 } else {
     die("Invalid request.");
 }
 
+
 // Handle form submission for ppmp_form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get POST data
     $year = $_POST['year'];
     $code = $_POST['code'];
     $general_description = $_POST['general_description'];
@@ -41,12 +60,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Handle schedule checkboxes
     $schedule = isset($_POST['schedule']) ? $_POST['schedule'] : [];
-    $schedule_json = json_encode($schedule);
+    $schedule_json = json_encode($schedule); // Convert schedule to JSON
+
+    // Convert arrays to JSON for items (general_description, quantity_size, unit_measurement, unit_cost)
+    $general_description_json = json_encode($general_description);
+    $quantity_size_json = json_encode($quantity_size);
+    $unit_measurement_json = json_encode($_POST['unit_measurement']);
+    $unit_cost_json = json_encode($_POST['unit_cost']);
 
     // Update the ppmp_form data
-    $updateQuery = "UPDATE ppmp_form SET year = ?, code = ?, general_description = ?, quantity_size = ?, estimated_budget = ?, schedule = ? WHERE ppmp_id = ?";
+    $updateQuery = "UPDATE ppmp_form SET year = ?, code = ?, general_description = ?, quantity_size = ?, estimated_budget = ?, schedule = ?, unit_measurement = ?, unit_cost = ? WHERE ppmp_id = ?";
     $updateStmt = $conn->prepare($updateQuery);
-    $updateStmt->bind_param("ssssssi", $year, $code, $general_description, $quantity_size, $estimated_budget, $schedule_json, $ppmp_id);
+    $updateStmt->bind_param("ssssssssi", $year, $code, $general_description_json, $quantity_size_json, $estimated_budget, $schedule_json, $unit_measurement_json, $unit_cost_json, $ppmp_id);
 
     if ($updateStmt->execute()) {
         header("Location: ppmp_list.php?message=PPMP form updated successfully");
@@ -132,8 +157,8 @@ $formData = $formResult->fetch_assoc();
         </div>
 
         <h2>Edit PPMP Form Details</h2>
-        <form id="ppmpForm">
-            <input type="hidden" name="ppmp_id" value="<?php echo htmlspecialchars($ppmp_id); ?>">
+        <form method="POST">
+            <input type="hidden" name="ppmp_form_id" value="<?php echo htmlspecialchars($ppmp_form_id); ?>">
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="year" class="form-label">Year</label>
@@ -173,14 +198,6 @@ $formData = $formResult->fetch_assoc();
                 </div>
             </div>
 
-            <!-- <div class="mb-3">
-                <label for="general_description" class="form-label">General Description</label>
-                <textarea class="form-control" id="general_description" name="general_description" rows="3" required><?php echo htmlspecialchars($formData['general_description']); ?></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="quantity_size" class="form-label">Quantity / Size</label>
-                <input type="text" class="form-control" id="quantity_size" name="quantity_size" value="<?php echo htmlspecialchars($formData['quantity_size']); ?>" required>
-            </div> -->
 
             <div class="mb-3">
                 <label for="estimated_budget" class="form-label">Estimated Budget</label>
@@ -215,12 +232,11 @@ $formData = $formResult->fetch_assoc();
                 }
                 ?>
             </div>
-
             <!-- Table for Items -->
             <table class="table" id="items-table">
                 <thead>
                     <tr>
-                        <th>General Description(Items)</th>
+                        <th>General Description (Items)</th>
                         <th>Unit of Measurement</th>
                         <th>Quantity / Size</th>
                         <th>Unit Cost</th>
@@ -229,29 +245,62 @@ $formData = $formResult->fetch_assoc();
                 </thead>
                 <tbody>
                     <?php
-                    // Example: Fetch the rows from the database
-                    $itemsQuery = "SELECT * FROM ppmp_form"; // Example query
-                    $itemsResult = mysqli_query($conn, $itemsQuery);
+                    // Fetch rows from the ppmp_form table
+                    $itemsQuery = "SELECT * FROM ppmp_form WHERE ppmp_id = ?"; // Ensure we filter based on the ppmp_id
+                    $stmt = $conn->prepare($itemsQuery);
+                    $stmt->bind_param("i", $ppmp_id); // Bind the ppmp_id parameter to the query
+                    $stmt->execute();
+                    $itemsResult = $stmt->get_result();
 
-                    while ($item = mysqli_fetch_assoc($itemsResult)) {
+                    // Loop through the results and display them in the table
+                    while ($item = $itemsResult->fetch_assoc()) {
+                        // Decode the JSON encoded fields
+                        $general_descriptions = json_decode($item['general_description']);
+                        $quantity_sizes = json_decode($item['quantity_size']);
+                        $unit_measurements = json_decode($item['unit_measurement']);
+                        $unit_cost_array = json_decode($item['unit_cost']);
+
+
+
+                        // Loop through each item in the arrays and display them on separate rows
+                        $num_items = count($general_descriptions); // Assuming all arrays have the same length
+                        for ($i = 0; $i < $num_items; $i++) {
+                            $general_description = $general_descriptions[$i];
+                            $quantity_size = $quantity_sizes[$i];
+                            $unit_measurement = $unit_measurements[$i];
+                            $unit_cost = $unit_cost_array[$i];
                     ?>
-                        <tr class="item-row">
-                            <td>
-                                <select name="general_description[]" class="form-control item-dropdown" required>
-                                    <!-- Items will be dynamically populated here -->
-                                    <option value="<?php echo $item['general_description']; ?>" selected>
-                                        <?php echo $item['general_description']; ?>
-                                    </option>
-                                </select>
-                            </td>
-                            <td><input type="text" name="unit_measurement[]" class="form-control" value="<?php echo $item['unit_measurement']; ?>" required></td>
-                            <td><input type="number" name="quantity_size[]" class="form-control" value="<?php echo $item['quantity_size']; ?>" required></td>
-                            <td><input type="number" name="unit_cost[]" class="form-control" value="<?php echo $item['unit_cost']; ?>" required></td>
-                            <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
-                        </tr>
-                    <?php } ?>
+                            <tr class="item-row">
+                                <td>
+                                    <select name="general_description[]" class="form-control item-dropdown" required>
+                                        <option value="<?php echo htmlspecialchars($general_description); ?>" selected>
+                                            <?php echo htmlspecialchars($general_description); ?>
+                                        </option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" name="unit_measurement[]" class="form-control" value="<?php echo htmlspecialchars($unit_measurement); ?>" required>
+                                </td>
+                                <td>
+                                    <input type="number" name="quantity_size[]" class="form-control" value="<?php echo htmlspecialchars($quantity_size); ?>" required>
+                                </td>
+                                <td>
+                                    <input type="number" name="unit_cost[]" class="form-control" value="<?php echo htmlspecialchars($unit_cost); ?>" required>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-danger remove-row">Remove</button>
+                                </td>
+                            </tr>
+                    <?php
+                        }
+                    }
+                    ?>
                 </tbody>
             </table>
+
+
+
+
 
 
             <div class="d-flex justify-content-between">
@@ -263,65 +312,6 @@ $formData = $formResult->fetch_assoc();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('ppmpForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent the default form submission
-
-            // Show confirmation dialog
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "Do you want to save the changes?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, save it!',
-                cancelButtonText: 'No, cancel!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const formData = new FormData(this);
-
-                    fetch('src/process/save_edit_ppmp.php', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Success!',
-                                    text: data.message,
-                                    confirmButtonText: 'OK'
-                                }).then(() => {
-                                    window.location.href = 'ppmp_list.php'; // Redirect after confirmation
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error!',
-                                    text: data.message,
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error!',
-                                text: 'An unexpected error occurred.',
-                                confirmButtonText: 'OK'
-                            });
-                        });
-                }
-            });
-        });
-        document.getElementById('add-row').addEventListener('click', function() {
-            const table = document.getElementById('items-table').getElementsByTagName('tbody')[0];
-            const newRow = document.querySelector('.item-row').cloneNode(true);
-            newRow.querySelectorAll('input, select').forEach(input => input.value = '');
-            table.appendChild(newRow);
-        });
-
         document.getElementById('items-table').addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-row')) {
                 const row = e.target.closest('tr');
@@ -330,7 +320,39 @@ $formData = $formResult->fetch_assoc();
                 }
             }
         });
+
+        // Event delegation for dynamically added rows (handle remove button clicks)
+        document.querySelector('#items-table tbody').addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-row')) {
+                console.log("Remove button clicked"); // Debugging step
+                const row = e.target.closest('tr'); // Find the row containing the clicked button
+                if (row) {
+                    row.remove(); // Remove the row from the table
+                    console.log("Row removed"); // Debugging step
+                } else {
+                    console.log("Row not found");
+                }
+            }
+        });
+        document.getElementById('ppmpForm').addEventListener('submit', function(e) {
+            let valid = true;
+
+            // Example: Check if all quantity_size and unit_cost fields are valid
+            document.querySelectorAll('[name="quantity_size[]"], [name="unit_cost[]"]').forEach(function(input) {
+                if (input.value === '' || isNaN(input.value)) {
+                    valid = false;
+                    alert("Please enter valid numbers for all fields.");
+                    return false; // Stop the form submission if invalid data is found
+                }
+            });
+
+            // If not valid, prevent form submission
+            if (!valid) {
+                e.preventDefault();
+            }
+        });
     </script>
+
 </body>
 
 </html>
