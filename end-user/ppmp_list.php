@@ -39,21 +39,42 @@ if ($yearResult) {
     }
 }
 
+// Fetch the ppmp_form_id from the ppmp_form table
+$ppmpFormQuery = "SELECT ppmp_form_id FROM ppmp_form LIMIT 1"; // Fetch one row or adjust your query to fetch multiple
+$ppmpFormResult = mysqli_query($conn, $ppmpFormQuery);
+
+// Check if the query was successful and fetch the ppmp_form_id
+if ($ppmpFormResult && mysqli_num_rows($ppmpFormResult) > 0) {
+    $ppmpFormRow = mysqli_fetch_assoc($ppmpFormResult);
+    $ppmpFormId = $ppmpFormRow['ppmp_form_id'];  // Declare the ppmp_form_id variable here
+} else {
+    $ppmpFormId = null; // Handle the case if no records are found
+}
+
+
 // Fetch the value of `updates_enabled` from the `settings` table
 $updatesQuery = "SELECT updates_enabled FROM settings WHERE id = 1";
 $updatesResult = mysqli_query($conn, $updatesQuery);
 $updatesEnabled = mysqli_fetch_assoc($updatesResult)['updates_enabled'];
-// Fetch PPMP data from the database
-$query = "SELECT ppmp_id, project_title, approver, date_created, status FROM ppmp_list";
+// Fetch PPMP data from the database, including ppmp_form_id by joining ppmp_list and ppmp_form
+// Fetch PPMP data along with associated ppmp_form_id
+$query = "
+SELECT 
+    ppmp_list.ppmp_id, 
+    ppmp_list.project_title, 
+    ppmp_list.approver, 
+    ppmp_list.date_created, 
+    ppmp_list.status, 
+    ppmp_form.ppmp_form_id 
+FROM ppmp_list
+LEFT JOIN ppmp_form ON ppmp_list.ppmp_id = ppmp_form.ppmp_id
+";
 $result = mysqli_query($conn, $query);
 
-// Check if there are any results
+// Check if query succeeded
 if (!$result) {
     die("Error fetching data: " . mysqli_error($conn));
 }
-
-
-
 ?>
 
 <!DOCTYPE html>
@@ -162,12 +183,16 @@ if (!$result) {
                                         style="margin-right: 5px;">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                    <a href="update_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
-                                        class="btn btn-outline-warning btn-sm edit-btn"
-                                        title="Edit PPMP"
-                                        style="margin-right: 5px;">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
+                                    <?php if (!empty($row['ppmp_form_id'])): ?>
+                                        <a href="update_ppmp.php?ppmp_form_id=<?php echo $row['ppmp_form_id']; ?>"
+                                            class="btn btn-outline-warning btn-sm edit-btn"
+                                            title="Edit PPMP">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="text-muted">No Form Available</span>
+                                    <?php endif; ?>
+
                                     <button class="btn btn-outline-danger btn-sm" title="Delete PPMP" onclick="confirmDelete('<?php echo $row['ppmp_id']; ?>')">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
