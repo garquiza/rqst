@@ -1342,10 +1342,11 @@ CREATE TABLE `settings` (
   `updates_enabled` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
+--Important tooo
 INSERT INTO `settings` (`id`, `updates_enabled`) VALUES
-(1, 0),
-(2, 0);
+(1, 1),
+(2, 1),
+(3, 0);  
 
 ALTER TABLE `settings`
   ADD PRIMARY KEY (`id`);

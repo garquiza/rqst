@@ -9,35 +9,13 @@ $data = json_decode(file_get_contents('php://input'), true);
 if (isset($data['name']) && !empty($data['name'])) {
     $name = $data['name'];
 
-    // Prepare the SQL query to insert the sector
-    $query = "INSERT INTO sector (name) VALUES (:name)";
+    // Prepare the SQL query to insert the sector with budget set to 0
+    $query = "INSERT INTO sector (name, budget) VALUES (:name, 0)";  // Set budget to 0
     $stmt = $pdo->prepare($query);
     $stmt->bindParam(':name', $name);
 
     try {
         // Execute the query
-        $stmt->execute();
-
-        // Recalculate and distribute the budget among all sectors
-        // Fetch total budget
-        $query = "SELECT amount FROM budget_amount ORDER BY created_at DESC LIMIT 1";
-        $stmt = $pdo->prepare($query);
-        $stmt->execute();
-        $totalBudget = $stmt->fetch(PDO::FETCH_ASSOC)['amount'];
-
-        // Fetch the total number of sectors
-        $query = "SELECT COUNT(*) FROM sector";
-        $stmt = $pdo->prepare($query);
-        $stmt->execute();
-        $sectorCount = $stmt->fetchColumn();
-
-        // Calculate the budget per sector
-        $budgetPerSector = $totalBudget / $sectorCount;
-
-        // Update all sectors with the new budget allocation
-        $query = "UPDATE sector SET budget = :budget";
-        $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':budget', $budgetPerSector);
         $stmt->execute();
 
         // Send a success response
