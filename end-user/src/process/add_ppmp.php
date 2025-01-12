@@ -36,6 +36,19 @@ try {
     // Get the last inserted ppmp_id
     $ppmp_id = $pdo->lastInsertId();
 
+    // Fetch item names for the given item_ids in the general description
+    foreach ($general_description as &$item_id) {
+        $query = "SELECT item_name FROM items WHERE item_id = ?";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([$item_id]);
+        $item = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Replace item_id with item_name
+        if ($item) {
+            $item_id = $item['item_name'];
+        }
+    }
+
     // Encode the arrays as JSON for a single row insertion
     $general_description_json = json_encode($general_description);
     $quantity_size_json = json_encode($quantity_size);
