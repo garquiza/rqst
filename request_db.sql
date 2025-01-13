@@ -1380,7 +1380,3 @@ CREATE TABLE access_dates (
 
 ALTER TABLE ppmp_list ADD date_bound DATE;
 
-ALTER TABLE settings ADD COLUMN pr_updates_enabled TINYINT(1) DEFAULT 0;
-
-ALTER TABLE `settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
