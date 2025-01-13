@@ -7,6 +7,7 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Include database connection
 include('src/config/database.php');
 
 // Check if the PR number is provided
@@ -57,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $update_stmt->bind_param("ssss", $approver, $status, $pr_process_status, $pr_number);
 
     if ($update_stmt->execute()) {
+        // Redirect to the PR list with a success message
         header("Location: pr.php?message=Purchase request updated successfully.");
         exit();
     } else {
@@ -69,7 +71,7 @@ if ($result_items->num_rows > 0) {
     $first_item = $result_items->fetch_assoc();
     $department = $first_item['department'];
     $section = $first_item['section'];
-    $purpose = $first_item['purpose']; 
+    $purpose = $first_item['purpose']; // Fetch purpose from the first item
     // Reset the result set pointer to the beginning
     $result_items->data_seek(0);
 }
@@ -136,7 +138,7 @@ if ($result_items->num_rows > 0) {
     </thead>
     <tbody>
         <?php while ($item = $result_items->fetch_assoc()): 
-            $total_amount += $item['total_cost']; // Accumulate total cost
+            $total_amount += $item['total_cost']; 
         ?>
             <tr>
                 <td><?php echo htmlspecialchars($item['item_no']); ?></td>
@@ -180,6 +182,7 @@ if ($result_items->num_rows > 0) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Include SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>

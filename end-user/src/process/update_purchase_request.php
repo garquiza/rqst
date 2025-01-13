@@ -1,9 +1,8 @@
 <?php
 session_start();
-include('../config/database.php'); // Adjust the path as necessary
+include('../config/database.php'); 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get the form data
     $pr_number = $_POST['pr_number'];
     $approver = $_POST['approver'];
     $status = 'Pending'; 
@@ -17,9 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($update_stmt->execute()) {
         if (isset($_POST['unit_cost'])) {
             foreach ($_POST['unit_cost'] as $inventory_id => $unit_cost) {
-                // Ensure the unit_cost is a valid number and non-negative
                 if (is_numeric($unit_cost) && $unit_cost >= 0) {
-                    // Prepare the query to update the unit cost
                     $update_cost_query = "UPDATE purchase_request_items SET unit_cost = ? WHERE inventory_id = ? AND pr_number = ?";
                     $update_cost_stmt = $conn->prepare($update_cost_query);
                     $update_cost_stmt->bind_param("dii", $unit_cost, $inventory_id, $pr_number);
@@ -37,8 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Return success message if all updates were successful
         echo json_encode(['status' => 'success', 'message' => 'Purchase request and unit costs updated successfully.']);
     } else {
+        // Error response if the purchase request update failed
         echo json_encode(['status' => 'error', 'message' => 'Error updating purchase request: ' . $conn->error]);
     }
 
