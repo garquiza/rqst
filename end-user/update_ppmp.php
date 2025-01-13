@@ -67,18 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $quantity_size_json = json_encode($quantity_size);
     $unit_measurement_json = json_encode($_POST['unit_measurement']);
     $unit_cost_json = json_encode($_POST['unit_cost']);
-
-    // Update the ppmp_form data
-    $updateQuery = "UPDATE ppmp_form SET year = ?, code = ?, general_description = ?, quantity_size = ?, estimated_budget = ?, schedule = ?, unit_measurement = ?, unit_cost = ? WHERE ppmp_id = ?";
-    $updateStmt = $conn->prepare($updateQuery);
-    $updateStmt->bind_param("ssssssssi", $year, $code, $general_description_json, $quantity_size_json, $estimated_budget, $schedule_json, $unit_measurement_json, $unit_cost_json, $ppmp_id);
-
-    if ($updateStmt->execute()) {
-        header("Location: ppmp_list.php?message=PPMP form updated successfully");
-        exit();
-    } else {
-        $error = "Error updating PPMP form: " . $conn->error;
-    }
 }
 
 // Fetch related ppmp_form data
@@ -88,6 +76,12 @@ $formStmt->bind_param("i", $ppmp_id);
 $formStmt->execute();
 $formResult = $formStmt->get_result();
 $formData = $formResult->fetch_assoc();
+
+// Fetch categories from the database
+$categoryQuery = "SELECT * FROM categories";
+$categoryResult = mysqli_query($conn, $categoryQuery);
+$categoryList = mysqli_fetch_all($categoryResult, MYSQLI_ASSOC);
+
 ?>
 
 <!DOCTYPE html>
@@ -147,7 +141,10 @@ $formData = $formResult->fetch_assoc();
                         <h5>PPMP Details</h5>
                     </div>
                     <div class="card-body">
-                        <p><strong>Project Title:</strong> <?php echo htmlspecialchars($ppmp['project_title']); ?></p>
+                        <div class="col-md-6 mb-3">
+                            <label for="project_title" class="form-label">Project Title</label>
+                            <input type="text" class="form-control" id="project_title" name="project_title" value="<?php echo htmlspecialchars($formData['project_title'] ?? $ppmp['project_title']); ?>" required>
+                        </div>
                         <p><strong>Approver:</strong> <?php echo htmlspecialchars($ppmp['approver']); ?></p>
                         <p><strong>Status:</strong> <?php echo htmlspecialchars(ucfirst($ppmp['status'])); ?></p>
                         <p><strong>Date Created:</strong> <?php echo date("F j, Y", strtotime($ppmp['date_created'])); ?></p>
@@ -157,7 +154,7 @@ $formData = $formResult->fetch_assoc();
         </div>
 
         <h2>Edit PPMP Form Details</h2>
-        <form method="POST">
+        <form method="POST" action="/admin/src/process/submit_form.php">
             <input type="hidden" name="ppmp_form_id" value="<?php echo htmlspecialchars($ppmp_form_id); ?>">
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -297,7 +294,48 @@ $formData = $formResult->fetch_assoc();
                     ?>
                 </tbody>
             </table>
+            <!-- New Table for Items -->
+            <table class="add-table" id="items-table-new">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>General Description (Items)</th>
+                        <th>Unit of Measurement</th>
+                        <th>Quantity / Size</th>
+                        <th>Unit Cost</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="add-item-row">
+                        <td>
+                            <select name="category[]" class="form-control category-dropdown">
+                                <option value="">Select Category</option>
+                                <?php foreach ($categoryList as $category): ?>
+                                    <option value="<?php echo $category['category_id']; ?>">
+                                        <?php echo $category['category_name']; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="general_description[]" class="form-control item-select-dropdown">
+                                <!-- Items will be dynamically populated here -->
+                            </select>
 
+                        </td>
+                        <td><input type="text" name="unit_measurement[]" class="form-control"></td>
+                        <td><input type="number" name="quantity_size[]" class="form-control"></td>
+                        <td><input type="number" name="unit_cost[]" class="form-control"></td>
+                        <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Add Row Button -->
+            <div class="mb-4 text-center">
+                <button type="button" id="add-row" class="btn btn-success">Add Item</button>
+            </div>
 
 
 
@@ -311,45 +349,247 @@ $formData = $formResult->fetch_assoc();
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        document.getElementById('items-table').addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-row')) {
-                const row = e.target.closest('tr');
-                if (document.querySelectorAll('.item-row').length > 1) {
-                    row.remove();
-                }
-            }
-        });
+        $(document).ready(function() {
+            // Function to calculate the total estimated budget
+            function updateEstimatedBudget() {
+                let totalBudget = 0;
 
-        // Event delegation for dynamically added rows (handle remove button clicks)
-        document.querySelector('#items-table tbody').addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('remove-row')) {
-                console.log("Remove button clicked"); // Debugging step
-                const row = e.target.closest('tr'); // Find the row containing the clicked button
-                if (row) {
-                    row.remove(); // Remove the row from the table
-                    console.log("Row removed"); // Debugging step
-                } else {
-                    console.log("Row not found");
-                }
-            }
-        });
-        document.getElementById('ppmpForm').addEventListener('submit', function(e) {
-            let valid = true;
+                // Loop through each row to calculate quantity * unit cost
+                $('#items-table tbody tr').each(function() {
+                    let quantity = $(this).find('input[name="quantity_size[]"]').val();
+                    let unitCost = $(this).find('input[name="unit_cost[]"]').val();
 
-            // Example: Check if all quantity_size and unit_cost fields are valid
-            document.querySelectorAll('[name="quantity_size[]"], [name="unit_cost[]"]').forEach(function(input) {
-                if (input.value === '' || isNaN(input.value)) {
-                    valid = false;
-                    alert("Please enter valid numbers for all fields.");
-                    return false; // Stop the form submission if invalid data is found
+                    // Check if both quantity and unit cost are valid numbers
+                    if (quantity && unitCost) {
+                        totalBudget += (parseFloat(quantity) * parseFloat(unitCost));
+                    }
+                });
+
+                // Update the estimated budget field with the calculated total
+                $('#estimated_budget').val(totalBudget.toFixed(2)); // Keep it to two decimal places
+            }
+            // Handle Category Dropdown Change to Fetch Items
+            $(document).on('change', '.category-dropdown', function() {
+                console.log("Category dropdown change event triggered!"); // Debugging
+
+                var categoryId = $(this).val(); // Get selected category_id
+                var itemDropdown = $(this).closest('tr').find('.item-select-dropdown'); // Find corresponding item dropdown in the same row
+
+                console.log("Selected categoryId: ", categoryId); // Debugging
+
+                if (categoryId) {
+                    $.ajax({
+                        url: 'src/process/get_items.php', // Ensure this path is correct
+                        type: 'GET',
+                        data: {
+                            category_id: categoryId
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            console.log("AJAX Response: ", response); // Debugging
+
+                            if (response.status === 'success') {
+                                var items = response.items;
+                                console.log("Items retrieved: ", items); // Debugging
+
+                                // Create a Set of existing item IDs in the dropdown to avoid duplicates
+                                var existingItems = new Set();
+                                itemDropdown.find('option').each(function() {
+                                    existingItems.add($(this).val());
+                                });
+
+                                var options = ''; // Initialize an empty string for new options
+
+                                items.forEach(function(item) {
+                                    if (!existingItems.has(item.item_id)) {
+                                        // Add only new items to the options string
+                                        options += `<option value="${item.item_id}">${item.item_name}</option>`;
+                                    }
+                                });
+
+                                // Append the new options to the dropdown
+                                itemDropdown.append(options);
+
+                                console.log("New options appended: ", options); // Debugging
+                            } else {
+                                alert('Error fetching items: ' + response.message);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.log("Error in AJAX request: ", status, error);
+                            alert('Error fetching items. Please try again.');
+                        }
+                    });
                 }
             });
 
-            // If not valid, prevent form submission
-            if (!valid) {
-                e.preventDefault();
+
+            const categories = <?php echo json_encode($categoryList, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>;
+
+            // Add a new row when the 'Add Item' button is clicked
+            $('#add-row').on('click', function() {
+                let categoryOptions = '<option value="">Select Category</option>';
+                categories.forEach(category => {
+                    categoryOptions += `<option value="${category.category_id}">${category.category_name}</option>`;
+                });
+
+                const newRow = `
+        <tr class="add-item-row">
+            <td>
+                <select name="category[]" class="form-control category-dropdown" required>
+                    ${categoryOptions}
+                </select>
+            </td>
+            <td>
+                <select name="general_description[]" class="form-control item-select-dropdown" required>
+                    <!-- Items will be dynamically populated here -->
+                </select>
+            </td>
+            <td><input type="text" name="unit_measurement[]" class="form-control" required></td>
+            <td><input type="number" name="quantity_size[]" class="form-control" required></td>
+            <td><input type="number" name="unit_cost[]" class="form-control" required></td>
+            <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
+        </tr>
+    `;
+                $('#items-table-new tbody').append(newRow);
+            });
+
+            // Recalculate the budget whenever quantity or unit cost changes
+            $(document).on('input', 'input[name="quantity_size[]"], input[name="unit_cost[]"]', function() {
+                updateEstimatedBudget(); // Recalculate estimated budget
+            });
+
+            // Remove a row when the 'Remove' button is clicked
+            $(document).on('click', '.remove-row', function() {
+                $(this).closest('tr').remove();
+                updateEstimatedBudget(); // Recalculate estimated budget after row removal
+            });
+
+            // Initialize the budget calculation when the page loads (in case there are existing rows)
+            updateEstimatedBudget();
+        });
+
+
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const itemsTable = document.getElementById('items-table');
+            const ppmpForm = document.getElementById('ppmpForm');
+
+            if (itemsTable) {
+                // Handle table row removal
+                itemsTable.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-row')) {
+                        const row = e.target.closest('tr');
+                        if (document.querySelectorAll('.item-row').length > 1) {
+                            row.remove();
+                        }
+                    }
+                });
+
+                // Event delegation for dynamically added rows (handle remove button clicks)
+                const itemsTableBody = itemsTable.querySelector('tbody');
+                if (itemsTableBody) {
+                    itemsTableBody.addEventListener('click', function(e) {
+                        if (e.target && e.target.classList.contains('remove-row')) {
+                            console.log("Remove button clicked");
+                            const row = e.target.closest('tr');
+                            if (row) {
+                                row.remove();
+                                console.log("Row removed");
+                            } else {
+                                console.log("Row not found");
+                            }
+                        }
+                    });
+                }
+            } else {
+                console.error('Element with id "items-table" not found in the DOM.');
             }
+
+
+            $('form').on('submit', function(e) {
+                e.preventDefault(); // Prevent default form submission
+
+                // Gather form data
+                var formData = {
+                    'ppmp_form_id': $('input[name="ppmp_form_id"]').val(),
+                    'year': $('input[name="year"]').val(),
+                    'code': $('input[name="code"]').val(),
+                    'project_title': $('input[name="project_title"]').val(),
+                    'estimated_budget': $('input[name="estimated_budget"]').val(),
+                    'mode_of_procurement': $('select[name="mode_of_procurement"]').val(),
+                    'schedule': $('input[name="schedule[]"]:checked').map(function() {
+                        return this.value;
+                    }).get(), // Collect checked schedule values
+                    'general_description': [], // Collect item names here
+                    'unit_measurement': [],
+                    'quantity_size': [],
+                    'unit_cost': []
+                };
+
+                // Combine values from both existing and new rows
+                $('#items-table tbody tr, #items-table-new tbody tr').each(function() {
+                    var generalDescription = $(this)
+                        .find('select[name="general_description[]"] option:selected')
+                        .text(); // Get the item name (text) from the dropdown
+                    var unitMeasurement = $(this).find('input[name="unit_measurement[]"]').val();
+                    var quantitySize = $(this).find('input[name="quantity_size[]"]').val();
+                    var unitCost = $(this).find('input[name="unit_cost[]"]').val();
+
+                    // Add data only if all required fields are filled
+                    if (generalDescription && unitMeasurement && quantitySize && unitCost) {
+                        formData.general_description.push(generalDescription);
+                        formData.unit_measurement.push(unitMeasurement);
+                        formData.quantity_size.push(quantitySize);
+                        formData.unit_cost.push(unitCost);
+                    }
+                });
+
+                // Ensure all required data is present
+                if (
+                    formData.general_description.length === 0 ||
+                    formData.unit_measurement.length === 0 ||
+                    formData.quantity_size.length === 0 ||
+                    formData.unit_cost.length === 0
+                ) {
+                    alert('Please fill in all required fields');
+                    return; // Stop submission if any data is missing
+                }
+
+                // Submit form via AJAX
+                $.ajax({
+                    url: '/rqst/end-user/src/process/submit_form.php',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            alert('Form submitted successfully!');
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', status, error);
+                        console.error('Response Text:', xhr.responseText);
+                        alert('There was an error submitting the form. Please check the console for details.');
+                    }
+                });
+
+
+
+                // Other existing row handling logic (adding, removing rows, etc.)
+                $(document).on('click', '.remove-row', function() {
+                    $(this).closest('tr').remove();
+                });
+
+                $(document).on('click', '.new-remove-row', function() {
+                    $(this).closest('tr').remove();
+                });
+            });
         });
     </script>
 
