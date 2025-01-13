@@ -19,14 +19,48 @@ $randomCode = strtoupper(bin2hex(random_bytes(5)));  // Random 10 characters (he
 // Fetch categories from the database
 $query = "SELECT * FROM categories";
 $result = mysqli_query($conn, $query);
+if (!$result) {
+    // Handle query error
+    die("Error fetching categories: " . mysqli_error($conn));
+}
+
 $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
 
-// Fetch the budget from the sector table
-$sectorQuery = "SELECT budget FROM sector";
-$sectorResult = mysqli_query($conn, $sectorQuery);
-$sectorData = mysqli_fetch_assoc($sectorResult);
-$sectorBudget = $sectorData ? $sectorData['budget'] : 0;
+// Get end user ID from session
+$endUserId = $_SESSION['user_id'];
 
+// Prepare and execute the sector query using a prepared statement
+$sectorQuery = "
+    SELECT s.budget
+    FROM sector s
+    JOIN end_users e ON s.id = e.sector_id
+    WHERE e.id = ?
+";
+
+if ($stmt = mysqli_prepare($conn, $sectorQuery)) {
+    // Bind the parameter
+    mysqli_stmt_bind_param($stmt, 'i', $endUserId);
+
+    // Execute the query
+    mysqli_stmt_execute($stmt);
+
+    // Bind result variables
+    mysqli_stmt_bind_result($stmt, $sectorBudget);
+
+    // Fetch the result
+    if (mysqli_stmt_fetch($stmt)) {
+        // Successfully fetched the budget
+    } else {
+        // Default value if no budget is found
+        $sectorBudget = 0;
+    }
+
+    // Close the statement
+    mysqli_stmt_close($stmt);
+} else {
+    // Handle query preparation error
+    die("Error preparing the query: " . mysqli_error($conn));
+}
 ?>
 
 <!DOCTYPE html>
