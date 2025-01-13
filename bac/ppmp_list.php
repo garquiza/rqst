@@ -39,22 +39,26 @@ $query = "
         pl.date_created, 
         pl.date_bound, 
         pl.status,
-        pf.schedule
+        pf.ppmp_form_id,  -- Include ppmp_form_id here
+        pf.schedule,
+        eu.sector  -- Include sector here
     FROM 
         ppmp_list pl
     LEFT JOIN 
         ppmp_form pf 
     ON 
         pl.ppmp_id = pf.ppmp_id
+    LEFT JOIN 
+        end_users eu
+    ON
+        pl.user_id = eu.id  -- Join with the end_users table to fetch sector
 ";
+
 $result = mysqli_query($conn, $query);
+
+// Check if query succeeded
 if (!$result) {
     die("Error fetching data: " . mysqli_error($conn));
-}
-
-// Check number of rows returned
-if (mysqli_num_rows($result) == 0) {
-    echo "<p>No PPMP entries found.</p>";
 }
 ?>
 
@@ -187,7 +191,7 @@ if (mysqli_num_rows($result) == 0) {
                                         <i class="fas fa-print"></i>
                                     </button>
 
-                                    <a href="../bac/edit_ppmp.php?ppmp_id=<?php echo $row['ppmp_id']; ?>"
+                                    <a href="../bac/edit_ppmp.php?ppmp_form_id=<?php echo $row['ppmp_form_id']; ?>"
                                         class="btn btn-outline-warning btn-sm edit-btn"
                                         title="Edit PPMP"
                                         style="margin-right: 5px;">

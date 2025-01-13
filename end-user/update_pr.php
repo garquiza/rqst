@@ -144,6 +144,8 @@ if ($result_items->num_rows > 0) {
                 <td><?php echo htmlspecialchars($item['item_name']); ?></td>
                 <td><?php echo htmlspecialchars($item['quantity']); ?></td>
                 <td>
+
+                    <!-- Make the Unit Cost an input field -->
                     <input type="number" class="form-control" name="unit_cost[<?php echo $item['inventory_id']; ?>]" value="<?php echo number_format($item['unit_cost'], 2); ?>" step="0.01" style="width: 100%;" required>
                 </td>
                 <td><?php echo number_format($item['total_cost'], 2); ?></td>

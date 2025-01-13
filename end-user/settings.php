@@ -73,14 +73,12 @@ $conn->close();
 
 <body>
     <div class="d-flex">
-        <!-- Sidebar -->
         <?php include 'sidebar.php'; ?>
 
-        <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="container">
                 <div class="header-card">
-                    <h2 class="text-center mb-4">User Settings</h2>
+                <h2 class="text-center mb-4">User Settings</h2>
                 </div>
                 <!-- Feedback Alerts -->
                 <div class="alert alert-success success-alert" id="success-alert" role="alert">
@@ -91,7 +89,6 @@ $conn->close();
                 </div>
 
                 <div class="row">
-                    <!-- User Information Form -->
                     <div class="col-md-8 offset-md-2">
                         <div class="card">
                             <div class="card-header bg-primary text-white">
@@ -108,10 +105,6 @@ $conn->close();
                                             <label for="last_name" class="form-label">Last Name</label>
                                             <input type="text" class="form-control" id="last_name" name="last_name" value="<?= htmlspecialchars($userData['last_name']) ?>" required>
                                         </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="sector" class="form-label">Sector</label>
-                                        <input type="text" class="form-control" id="sector" name="sector" value="<?= htmlspecialchars($userData['sector']) ?>" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="email" class="form-label">Email</label>
@@ -140,16 +133,13 @@ $conn->close();
                             </div>
                         </div>
                     </div>
-                    <!-- End of User Information Form -->
                 </div>
             </div>
         </div>
-        <!-- End of Main Content -->
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Example feedback alert handling
         const successAlert = document.getElementById('success-alert');
         const errorAlert = document.getElementById('error-alert');
 

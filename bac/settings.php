@@ -13,7 +13,7 @@ require_once '../bac/src/config/database.php';
 
 // Fetch user details
 $user_id = $_SESSION['user_id'];
-$sql = "SELECT first_name, last_name, email FROM bac_users WHERE id = ?";
+$sql = "SELECT first_name, last_name, email, position FROM bac_users WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $first_name = trim($_POST['first_name']);
     $last_name = trim($_POST['last_name']);
     $email = trim($_POST['email']);
+    $position = trim($_POST['position']);
     $password = trim($_POST['password']);
 
     // Validate inputs
@@ -32,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Invalid email address.";
     } else {
-        $update_sql = "UPDATE bac_users SET first_name = ?, last_name = ?, email = ?";
+        $update_sql = "UPDATE bac_users SET first_name = ?, last_name = ?, email = ?, position = ?";
 
         // Add password update if provided
         if (!empty($password)) {
@@ -45,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare($update_sql);
 
         if (!empty($password)) {
-            $stmt->bind_param('ssssi', $first_name, $last_name, $email, $hashed_password, $user_id);
+            $stmt->bind_param('sssssi', $first_name, $last_name, $email, $position, $hashed_password, $user_id);
         } else {
-            $stmt->bind_param('sssi', $first_name, $last_name, $email, $user_id);
+            $stmt->bind_param('ssssi', $first_name, $last_name, $email, $position, $user_id);
         }
 
         if ($stmt->execute()) {
@@ -57,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user['first_name'] = $first_name;
             $user['last_name'] = $last_name;
             $user['email'] = $email;
+            $user['position'] = $position;
         } else {
             $error = "Failed to update profile. Please try again later.";
         }
@@ -126,6 +128,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" value="<?= htmlspecialchars($user['email']) ?>" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="position" class="form-label">Position</label>
+                            <input type="text" class="form-control" id="position" name="position" value="<?= htmlspecialchars($user['position']) ?>" required>
                         </div>
 
                         <div class="mb-3">
