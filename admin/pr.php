@@ -29,13 +29,6 @@ if ($result->num_rows > 0) {
     $access_locked = 0; // Default: Unlock Access
 }
 
-// Check if the user is an admin and has permission to access locked PRs
-$admin_permission = false;
-if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin') {
-    // Check if the admin has permission to unlock PR years
-    $admin_permission = true; // This logic depends on your system's permission model
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_access'])) {
     // Get the new access status from the form
     $new_access_status = $_POST['access_locked'];
@@ -83,17 +76,6 @@ $offset = ($page - 1) * $limit;
 // Fetch purchase requests
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
-$year_filter = isset($_GET['year']) ? $_GET['year'] : date('Y'); // Default to current year
-
-// Handle year lock logic
-if ($access_locked == 1 && !$admin_permission) {
-    // Lock PRs for previous years
-    if ($year_filter < date('Y')) {
-        // If the PR year is locked and the admin doesn't have permission, deny access
-        echo "<script>alert('Access to previous year PRs is locked.'); window.location.href='index.php';</script>";
-        exit();
-    }
-}
 
 $query = "SELECT pr.*, pri.purpose 
           FROM purchase_requests pr
@@ -118,20 +100,6 @@ $count_result = mysqli_query($conn, $count_query);
 $total_rows = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_rows / $limit);
 
-$current_page = 'pr.php';
-
-// Fetch procurement titles 
-$titleQuery = "SELECT * FROM procurement_titles";
-$titleResult = mysqli_query($conn, $titleQuery);
-$titles = [];
-
-if ($titleResult) {
-
-    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
-
-        $titles[$titleRow['page']] = $titleRow;
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -156,8 +124,8 @@ if ($titleResult) {
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card mb-4">
-                <h1><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Purchase Request List'; ?></h1>
-                <p class="text-light"><?= isset($titles[$current_page]) ? $titles[$current_page]['subtitle'] : 'Description'; ?></p>
+                <h1 class="display-5 mb-2">Admin - Purchase Request List</h1>
+                <p class="text-light">Manage and monitor purchase requests for your organization.</p>
             </div>
 
             <!-- Status Summary Cards -->
@@ -188,7 +156,6 @@ if ($titleResult) {
                 </div>
             </div>
 
-
         <!-- Search and Filter Bar -->
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
             <!-- Search Bar -->
@@ -196,11 +163,23 @@ if ($titleResult) {
                 <input type="text" name="search" class="form-control me-2" placeholder="Search by PR Number or Purpose" value="<?php echo htmlspecialchars($search); ?>">
                 <button type="submit" class="btn btn-primary">Search</button>
             </form>
+            
+        <!-- Access Control Dropdown and Update Button -->
+        <form method="get" class="d-flex mb-2">
+            <!-- Dropdown to choose Enable/Disable Access -->
+            <select name="access_status" class="form-select me-2">
+                <option value="">Select Access Status</option>
+                <option value="enable" <?php if (!$_SESSION['access_locked']) echo 'selected'; ?>>Enable Access</option>
+                <option value="disable" <?php if ($_SESSION['access_locked']) echo 'selected'; ?>>Disable Access</option>
+            </select>
+
+            <!-- Submit Button for Access Change -->
+            <button type="submit" class="btn btn-outline-primary" name="update_access">Update Access</button>
+        </form>
   
             <!-- Status and Year Filter Dropdown -->
             <form method="get" class="d-flex mb-2">
                 <select name="year" class="form-select me-2" onchange="this.form.submit()">
-
                     <option value="">All Years</option>
                     <?php
                     // Get the current year
@@ -219,7 +198,6 @@ if ($titleResult) {
                     <?php endwhile; ?>
                 </select>
 
-
                 <select name="status" class="form-select me-2" onchange="this.form.submit()">
                     <option value="">All Status</option>
                     <option value="approved" <?php if ($status_filter == 'approved') echo 'selected'; ?>>Approved</option>
@@ -229,7 +207,6 @@ if ($titleResult) {
                 <button type="submit" class="btn btn-outline-primary">Filter</button>
             </form>
         </div>
-
 
             <!-- Purchase Request Table -->
             <div class="table-responsive mt-4">
@@ -284,11 +261,9 @@ if ($titleResult) {
                                     <button class="btn btn-outline-danger btn-sm" title="Delete PR" onclick="confirmDelete('<?php echo $row['pr_id']; ?>')">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
-
                                     <button class="btn btn-outline-secondary btn-sm" title="Tag as Completed" onclick="tagAsCompleted('<?php echo $row['pr_id']; ?>')">
                                         Tag as Completed
                                     </button>                                    
-
                                     <button class="btn btn-outline-success btn-sm" title="Approve PR" onclick="changeStatus('<?php echo $row['pr_id']; ?>', 'Approved')">
                                         ✔ 
                                     </button>
@@ -373,7 +348,6 @@ if ($titleResult) {
             });
         }
 
-
 function tagAsCompleted(pr_id) {
     console.log('PR ID to complete:', pr_id); // Log the PR ID
     Swal.fire({
@@ -417,6 +391,7 @@ function tagAsCompleted(pr_id) {
 
 
 
+       
         function changeStatus(pr_id, status) {
             Swal.fire({
                 title: `Are you sure you want to ${status} this PR?`,
