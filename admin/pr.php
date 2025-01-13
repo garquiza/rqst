@@ -29,6 +29,13 @@ if ($result->num_rows > 0) {
     $access_locked = 0; // Default: Unlock Access
 }
 
+// Check if the user is an admin and has permission to access locked PRs
+$admin_permission = false;
+if (isset($_SESSION['user_role']) && $_SESSION['user_role'] == 'admin') {
+    // Check if the admin has permission to unlock PR years
+    $admin_permission = true; // This logic depends on your system's permission model
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_access'])) {
     // Get the new access status from the form
     $new_access_status = $_POST['access_locked'];
@@ -76,6 +83,17 @@ $offset = ($page - 1) * $limit;
 // Fetch purchase requests
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '';
+$year_filter = isset($_GET['year']) ? $_GET['year'] : date('Y'); // Default to current year
+
+// Handle year lock logic
+if ($access_locked == 1 && !$admin_permission) {
+    // Lock PRs for previous years
+    if ($year_filter < date('Y')) {
+        // If the PR year is locked and the admin doesn't have permission, deny access
+        echo "<script>alert('Access to previous year PRs is locked.'); window.location.href='index.php';</script>";
+        exit();
+    }
+}
 
 $query = "SELECT pr.*, pri.purpose 
           FROM purchase_requests pr
