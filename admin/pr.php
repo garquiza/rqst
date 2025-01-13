@@ -2,12 +2,51 @@
 // Start session
 session_start();
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
+// Database credentials
+$servername = "localhost";  // Hostname (usually 'localhost')
+$username = "root";         // Database username (default for XAMPP: 'root')
+$password = "";             // Database password (default for XAMPP: '')
+$dbname = "request_db";     // Database name
+
+// Create a connection to the database
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check if the connection was successful
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
+// Fetch the current access_locked value from the database
+$sql = "SELECT access_locked FROM admin_settings WHERE id = 1";  // Assuming you have a settings table with one row
+$result = $conn->query($sql);
+
+// Check if the result is not empty
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $access_locked = $row['access_locked'];  // Current lock status (0 or 1)
+} else {
+    // If no record found, set default access_locked value
+    $access_locked = 0; // Default: Unlock Access
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_access'])) {
+    // Get the new access status from the form
+    $new_access_status = $_POST['access_locked'];
+
+    // Ensure the value is either 0 or 1, else set to the current value
+    if ($new_access_status == '0' || $new_access_status == '1') {
+        $new_access_status = (int)$new_access_status;
+
+        // Update the database with the new access status
+        $update_sql = "UPDATE admin_settings SET access_locked = ? WHERE id = 1";
+        $stmt = $conn->prepare($update_sql);
+        $stmt->bind_param("i", $new_access_status);
+        $stmt->execute();
+
+        // Update the session or UI to reflect the change
+        $access_locked = $new_access_status;  // Set the new value in the PHP variable
+    }
+}
 
 // Include database connection
 require_once '../admin/src/config/database.php';
@@ -61,6 +100,20 @@ $count_result = mysqli_query($conn, $count_query);
 $total_rows = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_rows / $limit);
 
+$current_page = 'pr.php';
+
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -85,8 +138,8 @@ $total_pages = ceil($total_rows / $limit);
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card mb-4">
-                <h1 class="display-5 mb-2">Admin - Purchase Request List</h1>
-                <p class="text-light">Manage and monitor purchase requests for your organization.</p>
+                <h1><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Purchase Request List'; ?></h1>
+                <p class="text-light"><?= isset($titles[$current_page]) ? $titles[$current_page]['subtitle'] : 'Description'; ?></p>
             </div>
 
             <!-- Status Summary Cards -->
@@ -117,25 +170,48 @@ $total_pages = ceil($total_rows / $limit);
                 </div>
             </div>
 
-            <!-- Search and Filter Bar -->
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
-                <!-- Search Bar -->
-                <form method="get" class="d-flex mb-2">
-                    <input type="text" name="search" class="form-control me-2" placeholder="Search by PR Number or Purpose" value="<?php echo htmlspecialchars($search); ?>">
-                    <button type="submit" class="btn btn-primary">Search</button>
-                </form>
 
-                <!-- Status Filter Dropdown -->
-                <form method="get" class="d-flex mb-2">
-                    <select name="status" class="form-select me-2" onchange="this.form.submit()">
-                        <option value="">All Statuses</option>
-                        <option value="approved" <?php if ($status_filter == 'approved') echo 'selected'; ?>>Approved</option>
-                        <option value="rejected" <?php if ($status_filter == 'rejected') echo 'selected'; ?>>Rejected</option>
-                        <option value="pending" <?php if ($status_filter == 'pending') echo 'selected'; ?>>Pending</option>
-                    </select>
-                    <button type="submit" class="btn btn-outline-primary">Filter</button>
-                </form>
-            </div>
+        <!-- Search and Filter Bar -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <!-- Search Bar -->
+            <form method="get" class="d-flex mb-2">
+                <input type="text" name="search" class="form-control me-2" placeholder="Search by PR Number or Purpose" value="<?php echo htmlspecialchars($search); ?>">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+  
+            <!-- Status and Year Filter Dropdown -->
+            <form method="get" class="d-flex mb-2">
+                <select name="year" class="form-select me-2" onchange="this.form.submit()">
+
+                    <option value="">All Years</option>
+                    <?php
+                    // Get the current year
+                    $current_year = date('Y');
+
+                    // Fetch all available years from the database
+                    $years_query = "SELECT DISTINCT YEAR(submitted_date) as year FROM purchase_requests ORDER BY year DESC";
+                    $years_result = mysqli_query($conn, $years_query);
+
+                    // Populate the year dropdown
+                    while ($row = mysqli_fetch_assoc($years_result)):
+                    ?>
+                        <option value="<?php echo $row['year']; ?>" <?php if (isset($_GET['year']) && $_GET['year'] == $row['year']) echo 'selected'; ?>>
+                            <?php echo $row['year']; ?>
+                        </option>
+                    <?php endwhile; ?>
+                </select>
+
+
+                <select name="status" class="form-select me-2" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="approved" <?php if ($status_filter == 'approved') echo 'selected'; ?>>Approved</option>
+                    <option value="rejected" <?php if ($status_filter == 'rejected') echo 'selected'; ?>>Rejected</option>
+                    <option value="pending" <?php if ($status_filter == 'pending') echo 'selected'; ?>>Pending</option>
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Filter</button>
+            </form>
+        </div>
+
 
             <!-- Purchase Request Table -->
             <div class="table-responsive mt-4">
@@ -181,21 +257,25 @@ $total_pages = ceil($total_rows / $limit);
                                 <td><?php echo htmlspecialchars($row['pr_process_status']); ?></td> <!-- New Column Data -->
                                 <td>
                                     <a href="src/process/download_excel_pr.php?pr_id=<?php echo urlencode($row['pr_id']); ?>"
-                                        class="btn btn-outline-success btn-sm"
-                                        title="Download Purchase Request">
+                                        class="btn btn-outline-success btn-sm" title="Download Purchase Request">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                    <button class="btn btn-outline-info btn-sm" title="Print PR" onclick="printPR('<?php echo $row['pr_id']; ?>')">
-                                        <i class="fas fa-print"></i>
-                                    </button>
                                     <a href="update_pr.php?pr_id=<?php echo $row['pr_id']; ?>" class="btn btn-outline-warning btn-sm" title="Update PR">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <button class="btn btn-outline-danger btn-sm" title="Delete PR" onclick="confirmDelete('<?php echo $row['pr_id']; ?>')">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
-                                    <button class="btn btn-outline-secondary btn-sm" title="Change Process Status" onclick="changeProcessStatus('<?php echo $row['pr_id']; ?>')">
+
+                                    <button class="btn btn-outline-secondary btn-sm" title="Tag as Completed" onclick="tagAsCompleted('<?php echo $row['pr_id']; ?>')">
                                         Tag as Completed
+                                    </button>                                    
+
+                                    <button class="btn btn-outline-success btn-sm" title="Approve PR" onclick="changeStatus('<?php echo $row['pr_id']; ?>', 'Approved')">
+                                        ✔ 
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" title="Reject PR" onclick="changeStatus('<?php echo $row['pr_id']; ?>', 'Rejected')">
+                                        ✖ 
                                     </button>
                                 </td>
                             </tr>
@@ -275,51 +355,101 @@ $total_pages = ceil($total_rows / $limit);
             });
         }
 
-        function changeProcessStatus(pr_id) {
+
+function tagAsCompleted(pr_id) {
+    console.log('PR ID to complete:', pr_id); // Log the PR ID
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You are about to mark this PR as completed!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, mark it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Send AJAX request to update status
+            fetch('pr_tag_complete.php', { // Correct file name
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pr_id: pr_id })
+            })
+            .then(response => {
+                console.log('Response Status:', response.status); // Log HTTP status
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response Data:', data); // Log the backend response
+                if (data.success) {
+                    Swal.fire('Completed!', data.message, 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error!', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Fetch Error:', error);
+                Swal.fire('Error!', 'Something went wrong. Please try again later.', 'error');
+            });
+        }
+    });
+}
+
+
+
+        function changeStatus(pr_id, status) {
             Swal.fire({
-                title: 'Change Process Status',
-                text: 'Are you sure you want to change the process status to "Completed"?',
+                title: `Are you sure you want to ${status} this PR?`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'Yes, change it!',
-                cancelButtonText: 'No, cancel!'
+                confirmButtonText: `Yes, ${status}!`,
+                cancelButtonText: 'Cancel'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Make the update request
-                    fetch(`src/process/update_process_status.php?pr_id=${pr_id}&status=Completed`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire({
-                                    title: 'Updated!',
-                                    text: data.message || 'The process status has been updated successfully.',
-                                    icon: 'success',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    window.location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    title: 'Error!',
-                                    text: data.message || 'An error occurred while updating the process status.',
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        })
-                        .catch(error => {
+                    // Make the update request using POST
+                    fetch('src/process/update_process_status.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ pr_id, status })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: `${status}!`,
+                                text: data.message || `The PR has been ${status()} successfully.`,
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.reload(); // Reload the page to reflect changes
+                            });
+                        } else {
                             Swal.fire({
                                 title: 'Error!',
-                                text: 'Something went wrong. Please try again later.',
+                                text: data.message || 'An error occurred while updating the status.',
                                 icon: 'error',
                                 confirmButtonText: 'OK'
                             });
-                            console.error('Update Error:', error);
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Something went wrong. Please try again later.',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
                         });
+                        console.error('Status Update Error:', error);
+                    });
                 }
             });
         }
+
     </script>
 </body>
 

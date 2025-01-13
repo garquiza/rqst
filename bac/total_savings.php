@@ -1,5 +1,3 @@
-93% of storage used … If you run out of space, you can't save to Drive or use Gmail. Get 100 GB of storage for ₱89.00 ₱0 for 1 month.
-total_savings.php
 <?php
 session_start();
 

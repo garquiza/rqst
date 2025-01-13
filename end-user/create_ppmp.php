@@ -274,15 +274,21 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
             updateEstimatedBudget();
         });
 
-        // Handle form submission
         $('#create-ppmp-form').on('submit', function(event) {
             event.preventDefault(); // Prevent default form submission
+
+            // Validate or fix any empty unit_cost[] values before submitting
+            $('input[name="unit_cost[]"]').each(function() {
+                if ($(this).val() === '') {
+                    $(this).val('0'); // Set default value to 0 if it's empty
+                }
+            });
 
             var formData = $(this).serialize(); // Get all form data
             console.log(formData); // Debug: Check serialized data
 
             $.ajax({
-                url: 'src/process/add_ppmp.php',
+                url: 'src/process/add_ppmp.php', // Assuming you're posting to the same file
                 type: 'POST',
                 data: formData,
                 dataType: 'json', // Expecting JSON response

@@ -15,19 +15,19 @@ $userLastName = $_SESSION['last_name'] ?? '';
 $email = $_SESSION['email'] ?? 'Not Available';
 $permissions = explode(',', $_SESSION['permission_access'] ?? ''); // Convert permissions to an array
 
-// Define the available processes
+// Define the available processes with custom labels
 $processes = [
-    'APP' => 'app.php',
-    'PPMP' => 'ppmp_list.php',
-    'PR' => 'pr.php',
-    'PMAF' => 'pmf.php',
-    'RFQ' => 'rfq.php',
-    'AOQ' => 'aoq.php',
-    'RESO' => 'reso.php',
-    'NOA' => 'noa.php',
-    'NTP' => 'ntp.php',
-    'PO' => 'po.php',
-    'PMR' => 'pmr.php',
+    'APP' => ['label' => 'Annual Procurement Plan', 'link' => 'app.php'],
+    'PPMP' => ['label' => 'Project Procurement Management Plan', 'link' => 'ppmp_list.php'],
+    'PR' => ['label' => 'Purchase Request', 'link' => 'pr.php'],
+    'PMAF' => ['label' => 'Procurement Modality Approval Form', 'link' => 'pmf.php'],
+    'RFQ' => ['label' => 'Request for Quotation', 'link' => 'rfq.php'],
+    'AOQ' => ['label' => 'Abstract of Quotation', 'link' => 'aoq.php'],
+    'RESO' => ['label' => 'Resolution', 'link' => 'reso.php'],
+    'NOA' => ['label' => 'Notice of Award', 'link' => 'noa.php'],
+    'NTP' => ['label' => 'Notice to Proceed', 'link' => 'ntp.php'],
+    'PO' => ['label' => 'Purchase Order', 'link' => 'po.php'],
+    'PMR' => ['label' => 'Project Monitoring Report', 'link' => 'pmr.php'],
 ];
 ?>
 
@@ -118,11 +118,11 @@ $processes = [
                     <h2 class="text-center header mb-4">Procurement Process</h2>
 
                     <div class="process-container">
-                        <?php foreach ($processes as $process => $link): ?>
-                            <a href="<?= in_array($process, $permissions) ? $link : '#' ?>" class="btn btn-link"
+                        <?php foreach ($processes as $process => $data): ?>
+                            <a href="<?= in_array($process, $permissions) ? $data['link'] : '#' ?>" class="btn btn-link"
                                 onclick="<?= !in_array($process, $permissions) ? "event.preventDefault(); showAccessDeniedAlert();" : '' ?>">
                                 <button class="process-btn <?= in_array($process, $permissions) ? '' : 'disabled' ?>"
-                                    <?= !in_array($process, $permissions) ? 'disabled' : '' ?>><?= $process ?></button>
+                                    <?= !in_array($process, $permissions) ? 'disabled' : '' ?>><?= $data['label'] ?></button>
                             </a>
                         <?php endforeach; ?>
                     </div>
