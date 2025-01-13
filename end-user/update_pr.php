@@ -7,7 +7,6 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Include database connection
 include('src/config/database.php');
 
 // Check if the PR number is provided
@@ -58,7 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $update_stmt->bind_param("ssss", $approver, $status, $pr_process_status, $pr_number);
 
     if ($update_stmt->execute()) {
-        // Redirect to the PR list with a success message
         header("Location: pr.php?message=Purchase request updated successfully.");
         exit();
     } else {
@@ -71,7 +69,7 @@ if ($result_items->num_rows > 0) {
     $first_item = $result_items->fetch_assoc();
     $department = $first_item['department'];
     $section = $first_item['section'];
-    $purpose = $first_item['purpose']; // Fetch purpose from the first item
+    $purpose = $first_item['purpose']; 
     // Reset the result set pointer to the beginning
     $result_items->data_seek(0);
 }
@@ -146,6 +144,7 @@ if ($result_items->num_rows > 0) {
                 <td><?php echo htmlspecialchars($item['item_name']); ?></td>
                 <td><?php echo htmlspecialchars($item['quantity']); ?></td>
                 <td>
+
                     <!-- Make the Unit Cost an input field -->
                     <input type="number" class="form-control" name="unit_cost[<?php echo $item['inventory_id']; ?>]" value="<?php echo number_format($item['unit_cost'], 2); ?>" step="0.01" style="width: 100%;" required>
                 </td>
@@ -183,12 +182,11 @@ if ($result_items->num_rows > 0) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Include SweetAlert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         document.getElementById('update-pr-form').addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent the default form submission
+            e.preventDefault(); 
 
             Swal.fire({
                 title: 'Are you sure?',
@@ -200,29 +198,23 @@ if ($result_items->num_rows > 0) {
                 confirmButtonText: 'Yes, update it!'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Create a FormData object from the form
                     const formData = new FormData(this);
 
-                    // Send AJAX request to save the updated purchase request
                     fetch('src/process/save_edit_pr.php', {
                             method: 'POST',
                             body: formData
                         })
                         .then(response => response.json())
                         .then(data => {
-                            // Check if the update was successful
                             if (data.status === 'success') {
-                                // Show success message
                                 Swal.fire({
                                     title: 'Updated!',
                                     text: data.message,
                                     icon: 'success'
                                 }).then(() => {
-                                    // Redirect to the PR list or reload the page
-                                    window.location.href = 'pr.php'; // Modify this URL if necessary
+                                    window.location.href = 'pr.php'; 
                                 });
                             } else {
-                                // Show error message
                                 Swal.fire({
                                     title: 'Error!',
                                     text: data.message,
@@ -231,7 +223,6 @@ if ($result_items->num_rows > 0) {
                             }
                         })
                         .catch(error => {
-                            // Handle fetch error
                             Swal.fire({
                                 title: 'Error!',
                                 text: 'Something went wrong. Please try again later.',

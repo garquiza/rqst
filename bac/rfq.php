@@ -30,7 +30,19 @@ $prQuery = $pdo->prepare("
 
 $prQuery->execute(['projectTitle' => $projectTitle]);
 $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
+
+$current_page = 'rfq.php';
+
+// Fetch procurement titles
+$titleQuery = $pdo->prepare("SELECT * FROM procurement_titles");
+$titleQuery->execute();
+$titles = [];
+
+while ($titleRow = $titleQuery->fetch(PDO::FETCH_ASSOC)) {
+    $titles[$titleRow['page']] = $titleRow;
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -56,7 +68,9 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <form method="POST" action="save_rfq.php" id="rfqForm">
                 <div class="header-card">
-                    <h1 class="mb-4">Request for Quotation (RFQ)</h1>
+                    <h2>
+                        <?= isset($titles[$current_page]) ? htmlspecialchars($titles[$current_page]['title']) : 'Request for Quotation (RFQ)'; ?>
+                    </h2>
                 </div>
 
                 <!-- Project Title Card -->
@@ -174,7 +188,7 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
                 </div>
 
                 <div class="d-flex justify-content-end my-4">
-                     <button type="button" id="saveButton" class="btn btn-success me-2"><i class="fas fa-save"></i> Save and Proceed</button>
+                    <button type="button" id="saveButton" class="btn btn-success me-2"><i class="fas fa-save"></i> Save and Proceed</button>
                 </div>
             </form>
         </div>

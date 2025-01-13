@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
 
         // Return success response
-        echo json_encode(['status' => 'success', 'message' => 'Resolution submitted successfully.', 'reso_id' => $resolution_id]);
+        echo json_encode(['status' => 'success', 'message' => 'Resolution submitted successfully.', 'reso_id'=>$resolution_id]);
     } else {
         // Return error response
         echo json_encode(['status' => 'error', 'message' => 'Failed to submit resolution.']);

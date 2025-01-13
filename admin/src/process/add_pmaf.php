@@ -13,13 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get and sanitize input data
     $projectTitle = mysqli_real_escape_string($conn, $_POST['project_title']);
     $modality = isset($_POST['modality']) ? json_encode($_POST['modality'], JSON_UNESCAPED_UNICODE) : '[]';
-    $funds = isset($_POST['funds']) && !empty($_POST['funds']) ? json_encode($_POST['funds'], JSON_UNESCAPED_UNICODE) : '[]';
-    $mooe = isset($_POST['mooe']) && !empty($_POST['mooe']) ? json_encode($_POST['mooe'], JSON_UNESCAPED_UNICODE) : '[]';
+    $fundSource = isset($_POST['fund_source']) ? mysqli_real_escape_string($conn, $_POST['fund_source']) : ''; // This is for the 'fund' column
+    $mooe = isset($_POST['mooe']) && is_numeric($_POST['mooe']) ? (float)$_POST['mooe'] : 0;
     $coAmount = isset($_POST['co']) && is_numeric($_POST['co']) ? (float)$_POST['co'] : 0;
+    $totalABC = isset($_POST['total_abc']) && is_numeric($_POST['total_abc']) ? (float)$_POST['total_abc'] : 0;
 
     // Validate required fields
-    if (empty($projectTitle) || empty($modality)) {
-        $response['message'] = 'Project title and modalities are required.';
+    if (empty($projectTitle) || empty($modality) || empty($fundSource)) {
+        $response['message'] = 'Project title, modalities, and fund source are required.';
         echo json_encode($response);
         exit();
     }
@@ -29,17 +30,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Prepare and execute the insert query
         $stmt = $conn->prepare(
-            "INSERT INTO pmaf (modality, project_title, fund, mooe_items, co_amount, submitted_at) 
-            VALUES (?, (SELECT ppmp_id FROM ppmp_list WHERE project_title = ?), ?, ?, ?, NOW())"
+            "INSERT INTO pmaf (modality, project_title, fund, total_abc, mooe_items, co_amount, submitted_at) 
+            VALUES (?, ?, ?, ?, ?, ?, NOW())"
         );
 
         if (!$stmt) {
             throw new Exception("Failed to prepare statement: " . $conn->error);
         }
 
-        $stmt->bind_param("ssssd", $modality, $projectTitle, $funds, $mooe, $coAmount);
+        // Bind parameters (fixing data types)
+        $stmt->bind_param("sssddd", $modality, $projectTitle, $fundSource, $totalABC, $mooe, $coAmount);
 
+        // Execute the query
         if (!$stmt->execute()) {
+            error_log("Database execution error: " . $stmt->error);
             throw new Exception("Database execution error: " . $stmt->error);
         }
 
@@ -68,3 +72,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 http_response_code(405);
 echo json_encode(["status" => "error", "message" => "Invalid request method."]);
 exit();
+?>

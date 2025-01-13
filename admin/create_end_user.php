@@ -8,8 +8,28 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Include database connection
+// Include database connection (mysqli connection)
 require_once '../admin/src/config/database.php';
+
+// Fetch sectors from the database
+try {
+    // Ensure the connection is established
+    if ($conn) {
+        $query = "SELECT name FROM sector";
+        $result = $conn->query($query);
+
+        if ($result) {
+            $sectors = $result->fetch_all(MYSQLI_ASSOC);
+        } else {
+            die("Error fetching sectors: " . $conn->error);
+        }
+    } else {
+        die("Database connection failed.");
+    }
+} catch (Exception $e) {
+    die("Error: " . $e->getMessage());
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -21,7 +41,6 @@ require_once '../admin/src/config/database.php';
     <title>Create End User</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Link to user.css -->
     <link rel="stylesheet" href="src/css/user.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -53,8 +72,15 @@ require_once '../admin/src/config/database.php';
 
                     <div class="mb-3">
                         <label for="sector" class="form-label">Sector</label>
-                        <input type="text" class="form-control" id="sector" name="sector" placeholder="Enter Sector" required>
-                        <div class="invalid-feedback">Please provide a sector.</div>
+                        <select class="form-control" id="sector" name="sector" required>
+                            <option value="" disabled selected>Select a sector</option>
+                            <?php foreach ($sectors as $sector): ?>
+                                <option value="<?= htmlspecialchars($sector['name']) ?>">
+                                    <?= htmlspecialchars($sector['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="invalid-feedback">Please select a sector.</div>
                     </div>
 
                     <div class="mb-3">
@@ -77,7 +103,6 @@ require_once '../admin/src/config/database.php';
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Strict form validation with Bootstrap classes
         document.getElementById('create-user-form').addEventListener('submit', function(e) {
             e.preventDefault(); // Prevent form submission until validation
 

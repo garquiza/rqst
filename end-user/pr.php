@@ -66,6 +66,21 @@ if ($status_filter) {
 $count_result = mysqli_query($conn, $count_query);
 $total_rows = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_rows / $limit);
+
+$current_page = 'pr.php';
+
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -89,8 +104,8 @@ $total_pages = ceil($total_rows / $limit);
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card mb-4">
-                <h1 class="display-5 mb-2">Purchase Request List</h1>
-                <p class="text-light">Manage and track the status of your purchase requests.</p>
+                <h1><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Purchase Request List'; ?></h1>
+                <p class="text-light"><?= isset($titles[$current_page]) ? $titles[$current_page]['subtitle'] : 'Description'; ?></p>
             </div>
 
             <!-- Status Summary Cards -->
@@ -229,6 +244,7 @@ $total_pages = ceil($total_rows / $limit);
                                     <a href="download_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-primary btn-sm" title="Download PR">
                                         <i class="fas fa-download"></i>
                                     </a>
+
                                     <a href="update_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-primary btn-sm" title="Update PR">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -305,6 +321,7 @@ $total_pages = ceil($total_rows / $limit);
             }
         });
     }
+
      // Function to change the process status
 function changeStatus(pr_number, action) {
     Swal.fire({
@@ -353,7 +370,6 @@ if (updatesEnabled === 0) {
         button.setAttribute('disabled', 'true');
     });
 }
-
 
     </script>
 </body>
