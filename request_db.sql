@@ -1358,3 +1358,14 @@ ALTER TABLE `settings`
 
 ALTER TABLE `settings`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--- shia
+
+ALTER TABLE table_name
+ADD COLUMN `total_abc` DECIMAL(10,2) DEFAULT NULL AFTER `co_amount`;
+
+
+ALTER TABLE pmaf
+MODIFY COLUMN project_title VARCHAR(255) DEFAULT NULL;
+
+
