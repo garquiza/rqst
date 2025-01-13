@@ -2,7 +2,6 @@
 // Include database connection
 require_once '../config/database.php';
 
-
 // Check if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Initialize response array
@@ -19,10 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $coAmount = isset($_POST['co']) && is_numeric($_POST['co']) ? (float)$_POST['co'] : 0;
     $totalABC = isset($_POST['total_abc']) && is_numeric($_POST['total_abc']) ? (float)$_POST['total_abc'] : 0;
 
-
-    
-
-
     // Validate required fields
     if (empty($projectTitle) || empty($modality) || empty($fundSource)) {
         $response['message'] = 'Project title, modalities, and fund source are required.';
@@ -36,30 +31,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Prepare and execute the insert query
         $stmt = $conn->prepare(
             "INSERT INTO pmaf (modality, project_title, fund, total_abc, mooe_items, co_amount, submitted_at) 
-            VALUES (?, (SELECT ppmp_id FROM ppmp_list WHERE project_title = ?), ?, ?, ?, ?, NOW())"
+            VALUES (?, ?, ?, ?, ?, ?, NOW())"
         );
-        
+
         if (!$stmt) {
             throw new Exception("Failed to prepare statement: " . $conn->error);
         }
-        
+
         // Bind parameters (fixing data types)
         $stmt->bind_param("sssddd", $modality, $projectTitle, $fundSource, $totalABC, $mooe, $coAmount);
-        
+
         // Execute the query
         if (!$stmt->execute()) {
             error_log("Database execution error: " . $stmt->error);
-            throw new Exception("Database execution error: " . $stmt->error);
-        }
-        
-        
-        // Bind parameters (modality, project title, fund source, mooe, co amount, and total abc)
-        $stmt->bind_param("sssdss", $modality, $projectTitle, $fundSource, $totalABC, $mooe, $coAmount);
-
-        
-
-        // Execute the query
-        if (!$stmt->execute()) {
             throw new Exception("Database execution error: " . $stmt->error);
         }
 
@@ -88,3 +72,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 http_response_code(405);
 echo json_encode(["status" => "error", "message" => "Invalid request method."]);
 exit();
+?>

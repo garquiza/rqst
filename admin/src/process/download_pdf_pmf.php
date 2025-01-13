@@ -15,15 +15,20 @@ $projectTitle = $_GET['project_title'];
 
 try {
     // Query to fetch project and PMAF data
-    $query = "SELECT p.*, 
-                pl.project_title as ppmp_title, 
-                pl.ppmp_id,
-                CONCAT(eu.first_name, ' ', eu.last_name) as end_user
-            FROM ppmp_list pl
-            LEFT JOIN pmaf p ON pl.ppmp_id = p.project_title
-            LEFT JOIN end_users eu ON pl.user_id = eu.id
-            WHERE pl.project_title = ? 
-            ORDER BY p.id DESC";
+    $query = "SELECT p.modality, 
+                 p.fund, 
+                 p.mooe_items, 
+                 p.co_amount, 
+                 p.total_abc, 
+                 pl.project_title as ppmp_title, 
+                 pl.ppmp_id, 
+                 CONCAT(eu.first_name, ' ', eu.last_name) as end_user
+          FROM pmaf p
+          LEFT JOIN ppmp_list pl ON p.project_title = pl.project_title
+          LEFT JOIN end_users eu ON pl.user_id = eu.id
+          WHERE pl.project_title = ?
+          ORDER BY p.id DESC";
+
 
     $stmt = $conn->prepare($query);
     if (!$stmt) {

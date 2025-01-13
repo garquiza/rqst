@@ -13,6 +13,7 @@ require_once '../admin/src/config/database.php';
 require_once '../admin/src/config/pdo.php';
 
 
+
 // Fetch approved projects from the database
 $query = "SELECT project_title FROM ppmp_list WHERE status = 'approved'";
 $result = mysqli_query($conn, $query);
@@ -24,8 +25,21 @@ if ($result) {
     }
 }
 
+// Fetch project titles already present in the pmaf table
+$pmafQuery = "SELECT project_title FROM pmaf";
+$pmafResult = mysqli_query($conn, $pmafQuery);
 
-// Fetch funds from the database
+$usedProjects = [];
+if ($pmafResult) {
+    while ($row = mysqli_fetch_assoc($pmafResult)) {
+        $usedProjects[] = $row['project_title'];
+    }
+}
+
+// Filter out the projects that are already used in pmaf
+$availableProjects = array_diff($approvedProjects, $usedProjects);
+
+
 // Fetch funds from the database
 $query = "SELECT * FROM fund";
 $stmt = $pdo->prepare($query);
@@ -143,8 +157,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <!-- Dropdown to select project title -->
                             <select id="projectTitle" name="project_title" class="form-select" required>
                                 <option value="">-- Select Project Title --</option>
-                                <?php foreach ($approvedProjects as $projectTitle): ?>
-                                    <option value="<?= $projectTitle ?>"><?= $projectTitle ?></option>
+                                
+                                <!-- Available projects -->
+                                <?php foreach ($availableProjects as $projectTitle): ?>
+                                    <option value="<?= htmlspecialchars($projectTitle) ?>"><?= htmlspecialchars($projectTitle) ?></option>
+                                <?php endforeach; ?>
+
+                                <!-- Used projects (disabled) -->
+                                <?php foreach ($usedProjects as $projectTitle): ?>
+                                    <option value="<?= htmlspecialchars($projectTitle) ?>" disabled><?= htmlspecialchars($projectTitle) ?> (Used)</option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -280,6 +301,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         } else if (choice.dismiss === Swal.DismissReason.cancel) {
                             // Trigger PDF download
                             window.location.href = `src/process/download_pdf_pmf.php?project_title=${encodeURIComponent(projectTitleValue)}`;
+
+                            setTimeout(() => {
+                                window.location.href = `rfq.php?project_title=${encodeURIComponent(projectTitleValue)}`;
+                            }, 3000);  // 3-second delay (adjust the timing if needed)
                         }
                     });
                 } else {
