@@ -157,7 +157,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         <?= isset($new_notifications) ? $new_notifications : ''; ?>
                     </a>
                 </li>
-
                 <li class="dropdown <?= in_array($current_page, ['app.php', 'ppmp_list.php', 'pr.php', 'pp.php', 'pmf.php', 'po_next.php', 'aoq_next.php', 'rfq.php', 'aoq.php', 'reso.php', 'noa.php', 'ntp.php', 'po.php', 'pmr.php']) ? 'active' : '' ?>">
                     <a href="#"><i class="fas fa-box"></i> Procurement <i class="fas fa-chevron-down ms-auto"></i></a>
                     <ul>

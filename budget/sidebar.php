@@ -1,3 +1,32 @@
+<?php
+// Include the database configuration file
+include_once('src/config/pdo.php');  // Update this path if necessary
+
+// Function to get the title for a given page
+function getPageTitle($page)
+{
+    global $pdo;  // Make sure the PDO connection is accessible
+
+    try {
+        // Prepare and execute the query to fetch the title
+        $stmt = $pdo->prepare("SELECT title FROM procurement_titles WHERE page = :page");
+        $stmt->bindParam(':page', $page);
+        $stmt->execute();
+
+        // Fetch the result
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? $result['title'] : 'Default Title';  // Return the title or a default value
+    } catch (Exception $e) {
+        return 'Error fetching title';  // Return an error message if query fails
+    }
+}
+
+// Get the titles for APP, PR, and PMR
+$appTitle = getPageTitle('app.php');
+$prTitle = getPageTitle('pr.php');
+$pmrTitle = getPageTitle('pmr.php');
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -101,13 +130,13 @@
                 <a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
             </li>
             <li class="<?= $current_page === 'app.php' ? 'active' : '' ?>">
-                <a href="app.php"><i class="fas fa-file-alt"></i> APP</a>
+                <a href="app.php"><i class="fas fa-file-alt"></i> <?= htmlspecialchars($appTitle) ?></a>
             </li>
             <li class="<?= $current_page === 'pr.php' ? 'active' : '' ?>">
-                <a href="pr.php"><i class="fas fa-receipt"></i> PR</a>
+                <a href="pr.php"><i class="fas fa-receipt"></i> <?= htmlspecialchars($prTitle) ?></a>
             </li>
             <li class="<?= $current_page === 'pmr.php' ? 'active' : '' ?>">
-                <a href="pmr.php"><i class="fas fa-chart-line"></i> PMR</a>
+                <a href="pmr.php"><i class="fas fa-chart-line"></i> <?= htmlspecialchars($pmrTitle) ?></a>
             </li>
             <li class="<?= $current_page === 'settings.php' ? 'active' : '' ?>">
                 <a href="settings.php"><i class="fas fa-cog"></i> Settings</a>

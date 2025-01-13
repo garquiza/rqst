@@ -9,6 +9,22 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Include database connection
+require_once '../admin/src/config/database.php';
+
+$current_page = 'pmr.php';
+
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 require_once '../admin/src/config/pdo.php';
 
 // Fetch procurement data
@@ -150,7 +166,8 @@ $pmrData = $query->fetchAll(PDO::FETCH_ASSOC);
         <!-- Main Content -->
         <div class="content">
             <div class="header-card">
-                <h1>Procurement Monitoring Report as of <?= date('F j, Y'); ?></h1>
+                <h1><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Procurement Monitoring Report'; ?></h1>
+                <p class="text-light"><?= isset($titles[$current_page]) ? $titles[$current_page]['subtitle'] : 'Description'; ?></p>
             </div>
             <div class="table-container">
                 <a href="src/process/download_excel_pmr.php" class="btn btn-success download-button" id="download-pmr-btn">

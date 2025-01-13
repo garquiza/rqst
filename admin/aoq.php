@@ -100,6 +100,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->close();
 }
 
+// Close the statement
+$stmt->close();
+
+$current_page = 'aoq.php';
+
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -126,8 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card mb-4">
-                <h1>Abstract of Quotation</h1>
-                <p>Fill out the project details below</p>
+                <h2><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Abstract for Quotation'; ?></h2>
             </div>
 
             <!-- Abstract of Quotation Form -->

@@ -69,6 +69,21 @@ $result = mysqli_query($conn, $query);
 if (!$result) {
     die("Error fetching data: " . mysqli_error($conn));
 }
+
+$current_page = 'ppmp_list.php';
+
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -90,8 +105,8 @@ if (!$result) {
 
     <div class="content animate__animated animate__fadeIn">
         <div class="header-card mb-4">
-            <h1 class="display-5 mb-2">PPMP List (Admin)</h1>
-            <p class="text-light">Manage, track, and approve PPMPs as an administrator.</p>
+            <h1><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'PPMP List'; ?></h1>
+            <p class="text-light"><?= isset($titles[$current_page]) ? $titles[$current_page]['subtitle'] : 'Description'; ?></p>
             <strong>
                 <p class="text-light">
                     Access Date:

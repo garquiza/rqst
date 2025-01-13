@@ -35,6 +35,16 @@ $prQuery = $pdo->prepare("
 $prQuery->execute(['projectTitle' => $projectTitle]);
 $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
 
+$current_page = 'rfq.php';
+
+// Fetch procurement titles
+$titleQuery = $pdo->prepare("SELECT * FROM procurement_titles");
+$titleQuery->execute();
+$titles = [];
+
+while ($titleRow = $titleQuery->fetch(PDO::FETCH_ASSOC)) {
+    $titles[$titleRow['page']] = $titleRow;
+}
 
 // Fetch PR numbers already in the RFQ table
 $rfqPRsQuery = $pdo->query("SELECT pr_request_number FROM rfq");
@@ -57,7 +67,6 @@ if (isset($_POST['project_title'])) {
         'total_abc' => $total_abc ?: '0' // Return 0 if no value found
     ]);
 }
-
 ?>
 
 
@@ -85,7 +94,9 @@ if (isset($_POST['project_title'])) {
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <form method="POST" action="save_rfq.php" id="rfqForm">
                 <div class="header-card">
-                    <h1 class="mb-4">Request for Quotation (RFQ)</h1>
+                    <h2>
+                        <?= isset($titles[$current_page]) ? htmlspecialchars($titles[$current_page]['title']) : 'Request for Quotation (RFQ)'; ?>
+                    </h2>
                 </div>
 
                 <!-- Project Title Card -->

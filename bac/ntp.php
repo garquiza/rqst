@@ -45,7 +45,22 @@ if (isset($_GET['noa_id'])) {
     $stmt->fetch();
     $stmt->close();
 }
+$current_page = 'ntp.php';
+
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -94,7 +109,7 @@ if (isset($_GET['noa_id'])) {
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card mb-4">
-                <h1 class="mb-3">Notice to Proceed</h1>
+                <h2><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Notice to Proceed'; ?></h2>
                 <form method="GET" class="mb-4">
                     <label for="noa_id" class="form-label">Select NOA:</label>
                     <select name="noa_id" id="noa_id" class="form-select" onchange="this.form.submit()">

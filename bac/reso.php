@@ -20,6 +20,20 @@ if ($aoqResult->num_rows > 0) {
         $aoqs[] = $row;
     }
 }
+$current_page = 'reso.php';
+
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -58,7 +72,7 @@ if ($aoqResult->num_rows > 0) {
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card mb-4">
-                <h1 class="mb-4">Resolution Form</h1>
+                <h2><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Resolution'; ?></h2>
             </div>
             <div class="card">
                 <div class="card-body">
