@@ -219,7 +219,7 @@ $ppmpResult = mysqli_query($conn, $ppmpQuery);
 
             if (ppmpId) {
                 // Fetch items for the selected PPMP ID using AJAX
-                fetch('src/process/get_inventory_items.php?ppmp_id=' + ppmpId)
+                fetch('get_inventory_items.php?ppmp_id=' + ppmpId)
                     .then(response => response.json())
                     .then(data => {
                         if (data.items && data.items.length > 0) {
