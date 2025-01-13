@@ -19,7 +19,8 @@ $query = "SELECT
             ppmp_list.ppmp_id, 
             ppmp_list.project_title, 
             ppmp_form.code, 
-            end_users.sector AS pmo_end_user, 
+            end_users.sector_id, 
+            sector.name AS pmo_end_user, 
             app.early_procurement_activity, 
             ppmp_form.mode_of_procurement, 
             app.advertisement_posting_ib_rei, 
@@ -36,14 +37,15 @@ $query = "SELECT
           LEFT JOIN app ON ppmp_list.ppmp_id = app.ppmp_id
           LEFT JOIN ppmp_form ON ppmp_list.ppmp_id = ppmp_form.ppmp_id
           LEFT JOIN end_users ON ppmp_list.user_id = end_users.id
+          LEFT JOIN sector ON end_users.sector_id = sector.id 
           WHERE ppmp_list.status = 'approved'";
-
 
 if ($yearFilter) {
     $query .= " AND YEAR(ppmp_list.date_created) = '$yearFilter'";
 }
 
 $query .= " ORDER BY ppmp_list.ppmp_id ASC LIMIT $limit OFFSET $offset";
+
 
 $result = mysqli_query($conn, $query);
 

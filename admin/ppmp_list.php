@@ -50,7 +50,7 @@ $query = "
         pl.status,
         pf.ppmp_form_id,  -- Include ppmp_form_id here
         pf.schedule,
-        eu.sector  -- Include sector here
+        s.name AS sector_name  -- Fetch the sector name from the sector table
     FROM 
         ppmp_list pl
     LEFT JOIN 
@@ -60,8 +60,13 @@ $query = "
     LEFT JOIN 
         end_users eu
     ON
-        pl.user_id = eu.id  -- Join with the end_users table to fetch sector
+        pl.user_id = eu.id
+    LEFT JOIN 
+        sector s  -- Join with the sector table to fetch sector name
+    ON 
+        eu.sector_id = s.id  -- Join end_users with sector table on sector_id
 ";
+
 
 $result = mysqli_query($conn, $query);
 
@@ -229,7 +234,7 @@ if ($titleResult) {
                         <td>
                             <span class="badge <?php echo $statusClass; ?>"><?php echo ucfirst($row['status']); ?></span>
                         </td>
-                        <td><?php echo htmlspecialchars($row['sector']); ?></td> <!-- Display sector here -->
+                        <td><?php echo isset($row['sector_name']) ? htmlspecialchars($row['sector_name']) : 'N/A'; ?></td>
                         <td class="text-justify">
                             <div class="btn-group" role="group" aria-label="Actions">
 

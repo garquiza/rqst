@@ -7,12 +7,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Sanitize and validate input
     $first_name = htmlspecialchars(trim($_POST['first_name']));
     $last_name = htmlspecialchars(trim($_POST['last_name']));
-    $sector = htmlspecialchars(trim($_POST['sector']));
+    $sector_name = htmlspecialchars(trim($_POST['sector']));
     $email = htmlspecialchars(trim($_POST['email']));
     $password = htmlspecialchars(trim($_POST['password']));
 
     // Validate the sector field
-    if (empty($sector)) {
+    if (empty($sector_name)) {
         echo json_encode([
             'success' => false,
             'message' => 'Sector is required.'
@@ -20,31 +20,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // Hash password for security
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    // Fetch the sector_id based on the selected sector_name
+    $query = "SELECT id FROM sector WHERE name = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("s", $sector_name);
+    $stmt->execute();
+    $stmt->store_result();
+    $stmt->bind_result($sector_id);
 
-    // Prepare SQL statement to insert new end user
-    $stmt = $conn->prepare("INSERT INTO end_users (first_name, last_name, sector, email, password) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssss", $first_name, $last_name, $sector, $email, $hashed_password);
+    // Check if the sector exists
+    if ($stmt->fetch()) {
+        $stmt->close();
 
-    // Execute query and check if successful
-    if ($stmt->execute()) {
-        // Respond with success message
-        echo json_encode([
-            'success' => true,
-            'message' => 'End user created successfully!'
-        ]);
+        // Hash password for security
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+        // Prepare SQL statement to insert new end user with sector_id
+        $stmt = $conn->prepare("INSERT INTO end_users (first_name, last_name, sector_id, email, password) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssiss", $first_name, $last_name, $sector_id, $email, $hashed_password);
+
+        // Execute query and check if successful
+        if ($stmt->execute()) {
+            // Respond with success message
+            echo json_encode([
+                'success' => true,
+                'message' => 'End user created successfully!'
+            ]);
+        } else {
+            // Respond with error message
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to create end user. Please try again later.'
+            ]);
+        }
+
+        $stmt->close();
     } else {
-        // Respond with error message
+        // If sector does not exist
         echo json_encode([
             'success' => false,
-            'message' => 'Failed to create end user. Please try again later.'
+            'message' => 'Selected sector does not exist.'
         ]);
     }
 
-    // Close the statement
-    $stmt->close();
+    // Close the database connection
+    $conn->close();
 }
-
-// Close the database connection
-$conn->close();

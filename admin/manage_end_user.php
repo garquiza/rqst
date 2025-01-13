@@ -11,11 +11,14 @@ if (!isset($_SESSION['user_id'])) {
 // Include database connection
 require_once '../admin/src/config/pdo.php';
 
-// Fetch end users from the database
-$sql = "SELECT * FROM end_users";
+// Fetch end users with the sector name from the database
+$sql = "SELECT end_users.*, sector.name 
+        FROM end_users 
+        LEFT JOIN sector ON end_users.sector_id = sector.id";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();
 $end_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
 // Pagination setup
 $items_per_page = 20;
@@ -195,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td><?php echo htmlspecialchars($user['id']); ?></td>
                                     <td><?php echo htmlspecialchars($user['first_name']); ?></td>
                                     <td><?php echo htmlspecialchars($user['last_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['sector'] ?? 'Not Available'); ?></td>
+                                    <td><?php echo htmlspecialchars($user['name'] ?? 'Not Available'); ?></td>
                                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                                     <td>
                                         <?php if ($user['status'] === 'activate'): ?>

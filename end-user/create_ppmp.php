@@ -20,6 +20,13 @@ $randomCode = strtoupper(bin2hex(random_bytes(5)));  // Random 10 characters (he
 $query = "SELECT * FROM categories";
 $result = mysqli_query($conn, $query);
 $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
+
+// Fetch the budget from the sector table
+$sectorQuery = "SELECT budget FROM sector";
+$sectorResult = mysqli_query($conn, $sectorQuery);
+$sectorData = mysqli_fetch_assoc($sectorResult);
+$sectorBudget = $sectorData ? $sectorData['budget'] : 0;
+
 ?>
 
 <!DOCTYPE html>
@@ -97,6 +104,10 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
                     <div class="col-md-6">
                         <label for="estimated_budget">Estimated Budget:</label>
                         <input type="text" id="estimated_budget" name="estimated_budget" required readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="budget">Budget:</label>
+                        <input type="text" id="budget" name="budget" value="<?php echo $sectorBudget; ?>" required readonly>
                     </div>
                 </div>
 
@@ -274,6 +285,35 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
             updateEstimatedBudget();
         });
 
+        $(document).ready(function() {
+            let sectorBudget = <?php echo $sectorBudget; ?>; // Get sector budget from PHP
+
+            // Function to calculate the total estimated budget
+            function updateEstimatedBudget() {
+                let totalBudget = sectorBudget; // Start with the sector budget
+
+                // Loop through each row to calculate quantity * unit cost
+                $('#items-table tbody tr').each(function() {
+                    let quantity = $(this).find('input[name="quantity_size[]"]').val();
+                    let unitCost = $(this).find('input[name="unit_cost[]"]').val();
+
+                    // Check if both quantity and unit cost are valid numbers
+                    if (quantity && unitCost) {
+                        totalBudget += (parseFloat(quantity) * parseFloat(unitCost)); // Add item costs to the budget
+                    }
+                });
+            }
+
+            // Recalculate the budget whenever quantity or unit cost changes
+            $(document).on('input', 'input[name="quantity_size[]"], input[name="unit_cost[]"]', function() {
+                updateEstimatedBudget(); // Recalculate estimated budget
+            });
+
+            // Initialize the budget calculation when the page loads (in case there are existing rows)
+            updateEstimatedBudget();
+        });
+
+
         $('#create-ppmp-form').on('submit', function(event) {
             event.preventDefault(); // Prevent default form submission
 
@@ -319,6 +359,48 @@ $categories = mysqli_fetch_all($result, MYSQLI_ASSOC);
                         confirmButtonText: 'OK'
                     });
                 }
+            });
+        });
+
+        $(document).ready(function() {
+            let sectorBudget = <?php echo $sectorBudget; ?>; // Get the sector budget from PHP
+
+            // Function to calculate the total cost
+            function calculateTotalCost() {
+                let totalCost = 0;
+
+                $('#items-table tbody tr').each(function() {
+                    let quantity = parseFloat($(this).find('input[name="quantity_size[]"]').val()) || 0;
+                    let unitCost = parseFloat($(this).find('input[name="unit_cost[]"]').val()) || 0;
+                    totalCost += quantity * unitCost;
+                });
+
+                return totalCost;
+            }
+
+            // Function to check and display warnings
+            function checkBudget() {
+                const totalCost = calculateTotalCost();
+                $('#estimated_budget').val(totalCost.toFixed(2));
+
+                if (totalCost > sectorBudget) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Budget Exceeded',
+                        text: `The total cost of PHP ${totalCost.toFixed(2)} exceeds the allocated budget of PHP ${sectorBudget.toFixed(2)}.`,
+                    });
+                }
+            }
+
+            // Event listener for real-time validation
+            $(document).on('input', 'input[name="quantity_size[]"], input[name="unit_cost[]"]', function() {
+                checkBudget();
+            });
+
+            // Revalidate budget on row removal
+            $(document).on('click', '.remove-row', function() {
+                $(this).closest('tr').remove();
+                checkBudget();
             });
         });
     </script>
