@@ -163,19 +163,6 @@ $total_pages = ceil($total_rows / $limit);
                 <input type="text" name="search" class="form-control me-2" placeholder="Search by PR Number or Purpose" value="<?php echo htmlspecialchars($search); ?>">
                 <button type="submit" class="btn btn-primary">Search</button>
             </form>
-            
-        <!-- Access Control Dropdown and Update Button -->
-        <form method="get" class="d-flex mb-2">
-            <!-- Dropdown to choose Enable/Disable Access -->
-            <select name="access_status" class="form-select me-2">
-                <option value="">Select Access Status</option>
-                <option value="enable" <?php if (!$_SESSION['access_locked']) echo 'selected'; ?>>Enable Access</option>
-                <option value="disable" <?php if ($_SESSION['access_locked']) echo 'selected'; ?>>Disable Access</option>
-            </select>
-
-            <!-- Submit Button for Access Change -->
-            <button type="submit" class="btn btn-outline-primary" name="update_access">Update Access</button>
-        </form>
   
             <!-- Status and Year Filter Dropdown -->
             <form method="get" class="d-flex mb-2">

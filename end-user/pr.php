@@ -229,7 +229,7 @@ $total_pages = ceil($total_rows / $limit);
                                     <a href="download_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-primary btn-sm" title="Download PR">
                                         <i class="fas fa-download"></i>
                                     </a>
-                                    <a href="update_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-warning btn-sm" title="Update PR">
+                                    <a href="update_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-primary btn-sm" title="Update PR">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <button class="btn btn-outline-danger btn-sm" title="Delete PR" onclick="confirmDelete('<?php echo $row['pr_number']; ?>')">
@@ -305,42 +305,56 @@ $total_pages = ceil($total_rows / $limit);
             }
         });
     }
+     // Function to change the process status
+function changeStatus(pr_number, action) {
+    Swal.fire({
+        title: `Are you sure you want to ${action} this PR?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: `Yes, ${action}!`,
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Send request to the server to update the status
+            fetch('src/process/update_process_status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ pr_number, action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: `${action}d!`,
+                        text: `The purchase request has been ${action}d.`,
+                        icon: 'success'
+                    }).then(() => location.reload()); // Reload to update the table
+                } else {
+                    Swal.fire('Error!', 'There was an issue updating the status.', 'error');
+                }
+            })
+            .catch(error => {
+                Swal.fire('Error!', 'There was an error with the request.', 'error');
+            });
+        }
+    });
+}
 
-    
-    function changeStatus(pr_number, action) {
-        Swal.fire({
-            title: `Are you sure you want to ${action} this PR?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: `Yes, ${action}!`,
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch('src/process/update_process_status.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ pr_number, action })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        Swal.fire({
-                            title: `${action}d!`,
-                            text: `The purchase request has been ${action}d.`,
-                            icon: 'success'
-                        }).then(() => location.reload()); 
-                    } else {
-                        Swal.fire('Error!', 'There was an issue updating the status.', 'error');
-                    }
-                })
-                .catch(error => {
-                    Swal.fire('Error!', 'There was an error with the request.', 'error');
-                });
-            }
-        });
-    }
+// Fetch the value of updates_enabled from PHP
+const updatesEnabled = <?php echo $updatesEnabled; ?>;
+
+// Disable "Edit" buttons if updates_enabled is 0
+if (updatesEnabled === 0) {
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach(button => {
+        button.classList.add('disabled');
+        button.setAttribute('disabled', 'true');
+    });
+}
+
+
     </script>
 </body>
 

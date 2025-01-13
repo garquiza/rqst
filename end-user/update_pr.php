@@ -138,7 +138,7 @@ if ($result_items->num_rows > 0) {
     </thead>
     <tbody>
         <?php while ($item = $result_items->fetch_assoc()): 
-            $total_amount += $item['total_cost']; 
+            $total_amount += $item['total_cost']; // Accumulate total cost
         ?>
             <tr>
                 <td><?php echo htmlspecialchars($item['item_no']); ?></td>
@@ -146,6 +146,7 @@ if ($result_items->num_rows > 0) {
                 <td><?php echo htmlspecialchars($item['item_name']); ?></td>
                 <td><?php echo htmlspecialchars($item['quantity']); ?></td>
                 <td>
+                    <!-- Make the Unit Cost an input field -->
                     <input type="number" class="form-control" name="unit_cost[<?php echo $item['inventory_id']; ?>]" value="<?php echo number_format($item['unit_cost'], 2); ?>" step="0.01" style="width: 100%;" required>
                 </td>
                 <td><?php echo number_format($item['total_cost'], 2); ?></td>
@@ -187,7 +188,7 @@ if ($result_items->num_rows > 0) {
 
     <script>
         document.getElementById('update-pr-form').addEventListener('submit', function(e) {
-            e.preventDefault(); 
+            e.preventDefault(); // Prevent the default form submission
 
             Swal.fire({
                 title: 'Are you sure?',
@@ -199,23 +200,29 @@ if ($result_items->num_rows > 0) {
                 confirmButtonText: 'Yes, update it!'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    // Create a FormData object from the form
                     const formData = new FormData(this);
 
+                    // Send AJAX request to save the updated purchase request
                     fetch('src/process/save_edit_pr.php', {
                             method: 'POST',
                             body: formData
                         })
                         .then(response => response.json())
                         .then(data => {
+                            // Check if the update was successful
                             if (data.status === 'success') {
+                                // Show success message
                                 Swal.fire({
                                     title: 'Updated!',
                                     text: data.message,
                                     icon: 'success'
                                 }).then(() => {
-                                    window.location.href = 'pr.php'; 
+                                    // Redirect to the PR list or reload the page
+                                    window.location.href = 'pr.php'; // Modify this URL if necessary
                                 });
                             } else {
+                                // Show error message
                                 Swal.fire({
                                     title: 'Error!',
                                     text: data.message,
@@ -224,6 +231,7 @@ if ($result_items->num_rows > 0) {
                             }
                         })
                         .catch(error => {
+                            // Handle fetch error
                             Swal.fire({
                                 title: 'Error!',
                                 text: 'Something went wrong. Please try again later.',

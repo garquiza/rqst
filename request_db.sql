@@ -1353,3 +1353,30 @@ ALTER TABLE `settings`
 ALTER TABLE `settings`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
+--PR--
+ALTER TABLE bac_users ADD COLUMN position VARCHAR(255) NULL;
+
+CREATE TABLE settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    updates_enabled TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE access_dates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    start_date DATE,
+    end_date DATE
+);
+
+ALTER TABLE ppmp_list ADD date_bound DATE;
+
+ALTER TABLE settings ADD COLUMN pr_updates_enabled TINYINT(1) DEFAULT 0;
+
+ALTER TABLE `settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
