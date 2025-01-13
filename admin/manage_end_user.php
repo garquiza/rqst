@@ -214,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <button class="btn btn-outline-secondary btn-sm" title="Disable" onclick="updateStatus(<?php echo $user['id']; ?>, 'disabled');">
                                             <i class="fa fa-times"></i>
                                         </button>
-                                        <a href="edit_bac_user.php?id=<?php echo $user['id']; ?>" class="btn btn-warning btn-sm" title="Edit">
+                                        <a href="edit_end_user.php?id=<?php echo $user['id']; ?>" class="btn btn-warning btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <a href="#" class="btn btn-danger btn-sm" title="Delete" onclick="confirmDelete(<?php echo $user['id']; ?>); return false;">
