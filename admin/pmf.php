@@ -12,8 +12,6 @@ if (!isset($_SESSION['user_id'])) {
 require_once '../admin/src/config/database.php';
 require_once '../admin/src/config/pdo.php';
 
-
-
 // Fetch approved projects from the database
 $query = "SELECT project_title FROM ppmp_list WHERE status = 'approved'";
 $result = mysqli_query($conn, $query);
@@ -25,6 +23,19 @@ if ($result) {
     }
 }
 
+$current_page = 'pmf.php';
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 // Fetch project titles already present in the pmaf table
 $pmafQuery = "SELECT project_title FROM pmaf";
 $pmafResult = mysqli_query($conn, $pmafQuery);
@@ -67,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     echo "<script>alert('Fund source saved successfully!'); window.location.href='pmf.php';</script>";
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -105,11 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="content flex-grow-1 p-4 animate__animated animate__fadeIn">
             <div class="card shadow-lg">
                 <div class="card-header bg-primary text-white">
-                    <h2>Procurement Modality Approval Form</h2>
+                    <h2><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Procurement Modality Approval Form'; ?></h2>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted mb-4">Fill out the required fields to request procurement approval.</p>
 
+                <div class="card-body">
                     <!-- Procurement Form -->
                     <form id="pmafForm">
                         <!-- Modalities -->

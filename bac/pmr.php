@@ -10,6 +10,21 @@ if (!isset($_SESSION['user_id'])) {
 
 // Include database connection
 require_once '../bac/src/config/database.php';
+
+$current_page = 'pmr.php';
+
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -38,8 +53,8 @@ require_once '../bac/src/config/database.php';
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card">
-                <h1 class="mb-4">Procurement Monitoring Report</h1>
-                <p class="mb-0">Description</p>
+                <h1><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Procurement Monitoring Report'; ?></h1>
+                <p class="text-light"><?= isset($titles[$current_page]) ? $titles[$current_page]['subtitle'] : 'Description'; ?></p>
             </div>
         </div>
     </div>

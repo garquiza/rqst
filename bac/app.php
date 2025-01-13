@@ -15,12 +15,27 @@ $limit = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
-$query = "SELECT ppmp_list.ppmp_id, ppmp_list.project_title, ppmp_form.code, app.pmo_end_user, app.early_procurement_activity, 
-            app.mode_of_procurement, app.advertisement_posting_ib_rei, app.submission_opening_bids, app.notice_of_award, 
-            app.contract_signing, app.source_of_funds, app.total, app.mooe, app.co, app.remarks
-          FROM ppmp_list
+$query = "SELECT 
+            ppmp_list.ppmp_id, 
+            ppmp_list.project_title, 
+            ppmp_form.code, 
+            end_users.sector AS pmo_end_user, 
+            app.early_procurement_activity, 
+            ppmp_form.mode_of_procurement, 
+            app.advertisement_posting_ib_rei, 
+            app.submission_opening_bids, 
+            app.notice_of_award, 
+            app.contract_signing, 
+            app.source_of_funds, 
+            app.total, 
+            app.mooe, 
+            app.co, 
+            app.remarks
+          FROM 
+            ppmp_list
           LEFT JOIN app ON ppmp_list.ppmp_id = app.ppmp_id
           LEFT JOIN ppmp_form ON ppmp_list.ppmp_id = ppmp_form.ppmp_id
+          LEFT JOIN end_users ON ppmp_list.user_id = end_users.id
           WHERE ppmp_list.status = 'approved'";
 
 if ($yearFilter) {
@@ -56,6 +71,17 @@ $countResult = mysqli_query($conn, $countQuery);
 $countRow = mysqli_fetch_assoc($countResult);
 $totalRows = $countRow['total'];
 $totalPages = ceil($totalRows / $limit);
+
+$current_page = 'app.php';
+// Fetch procurement titles
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+if ($titleResult) {
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -85,8 +111,8 @@ $totalPages = ceil($totalRows / $limit);
 
         <div class="content flex-grow-1" style="margin-left: 250px; padding: 20px;">
             <div class="header-card">
-                <h1 class="mb-4">Annual Procurement Plan</h1>
-                <p class="mb-0">Description</p>
+                <h1 class="mb-4"><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Annual Procurement Plan'; ?></h1>
+                <p class="mb-0"><?= isset($titles[$current_page]) ? $titles[$current_page]['subtitle'] : 'Description'; ?></p>
             </div>
 
             <div class="table-container">

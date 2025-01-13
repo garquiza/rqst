@@ -49,7 +49,7 @@ if ($result_aoq->num_rows > 0) {
         <!-- Main Content -->
         <div class="content flex-grow-1 animate__animated animate__fadeIn">
             <div class="header-card mb-4">
-                <h1>Select AOQ</h1>
+                <h1>Select Abstract of Quotation</h1>
                 <p>Fill out the details below</p>
             </div>
 

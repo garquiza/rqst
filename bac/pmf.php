@@ -21,7 +21,20 @@ if ($result) {
         $approvedProjects[] = $row['project_title'];
     }
 }
+$current_page = 'pmf.php';
 
+// Fetch procurement titles 
+$titleQuery = "SELECT * FROM procurement_titles";
+$titleResult = mysqli_query($conn, $titleQuery);
+$titles = [];
+
+if ($titleResult) {
+
+    while ($titleRow = mysqli_fetch_assoc($titleResult)) {
+
+        $titles[$titleRow['page']] = $titleRow;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -49,7 +62,7 @@ if ($result) {
         <div class="content flex-grow-1 p-4 animate__animated animate__fadeIn">
             <div class="card shadow-lg">
                 <div class="card-header bg-primary text-white">
-                    <h2>Procurement Modality Approval Form</h2>
+                    <h2><?= isset($titles[$current_page]) ? $titles[$current_page]['title'] : 'Procurement Modality Approval Form'; ?></h2>
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-4">Fill out the required fields to request procurement approval.</p>

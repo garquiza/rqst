@@ -1354,6 +1354,9 @@ ALTER TABLE `settings`
 ALTER TABLE `settings`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
+ALTER TABLE ppmp_form
+MODIFY COLUMN unit_cost VARCHAR(255) DEFAULT NULL;
+=======
 --PR--
 ALTER TABLE bac_users ADD COLUMN position VARCHAR(255) NULL;
 
@@ -1376,9 +1379,4 @@ CREATE TABLE access_dates (
 );
 
 ALTER TABLE ppmp_list ADD date_bound DATE;
-
-ALTER TABLE settings ADD COLUMN pr_updates_enabled TINYINT(1) DEFAULT 0;
-
-ALTER TABLE `settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
