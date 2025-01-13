@@ -1,13 +1,13 @@
 <?php
 // Include the TCPDF library and database connection
-require_once(__DIR__ . '/../../../vendor/tecnickcom/tcpdf/tcpdf.php');
+require_once('../../vendor/autoload.php');
 require_once('../config/database.php');
 
 ob_start(); // Start output buffering to capture any accidental output
 
 
 // Get purchase order ID from the URL
-$purchase_order_id = isset($_GET['purchase_order_id']) ? (int)$_GET['purchase_order_id'] : null;
+$purchase_order_id = isset($_GET['purchase_order_id']) ? (int)$_GET['purchase_order_id'] : null; 
 
 if ($purchase_order_id === null) {
     die("Error: Purchase order ID not provided in the URL.");
@@ -40,16 +40,14 @@ $result_items = $stmt_items->get_result();
 $purchase_order_items = $result_items->fetch_all(MYSQLI_ASSOC);
 
 
-class MYPDF extends TCPDF
-{
-    public function Header()
-    {
+class MYPDF extends TCPDF {
+    public function Header() {
         $this->SetFont('helvetica', 'B', 10);
-
+        
         // Add image using TCPDF Image method
         // Parameters: Image(file, x, y, width, height)
         $this->Image('../../../assets/images/logo.jpg', 20, 6, 17); // Adjust coordinates and size as needed
-
+        
         $html = <<<EOD
         <div style="margin-top: 10px;"></div> 
         <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;width:100%;text-align:center;">
@@ -67,6 +65,7 @@ class MYPDF extends TCPDF
         EOD;
         $this->writeHTML($html, true, false, false, false, '');
     }
+    
 }
 
 // Create an instance of TCPDF
@@ -278,3 +277,4 @@ $pdf->Output('purchase_order.pdf', 'D');
 ob_end_flush(); //End output buffering.
 // Close database connection
 $conn->close();
+?>

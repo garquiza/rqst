@@ -40,11 +40,13 @@ if (isset($data['pr_id']) && isset($data['status'])) {
     $approver_name = $approver_data['full_name'];
 
     // Prepare the SQL query with placeholders to prevent SQL injection
+
     $update_query = "UPDATE purchase_requests SET pr_process_status = ?, status = ?, approver = ? WHERE pr_id = ?";
 
     // If year filter is provided, add it to the WHERE clause
     if ($year_filter) {
         $update_query .= " AND YEAR(request_date) = ?";
+
     }
 
     $stmt = $conn->prepare($update_query);

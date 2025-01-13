@@ -1,3 +1,4 @@
+
 <?php
 // Start session
 session_start();
@@ -20,17 +21,45 @@ $projectQuery->execute();
 $approvedProjects = $projectQuery->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch PRs for the project title from the database
-$prQuery = $pdo->prepare("  
-    SELECT pr.pr_number, end_users.first_name, end_users.last_name
+// Fetch PRs for the project title from the database
+$prQuery = $pdo->prepare("
+    SELECT pr.pr_number, end_users.sector
     FROM purchase_requests AS pr
     INNER JOIN end_users ON pr.end_user_id = end_users.id
     INNER JOIN ppmp_list ON pr.ppmp_id = ppmp_list.ppmp_id
-    WHERE ppmp_list.project_title = :projectTitle AND pr.status = 'Approved'
+    WHERE ppmp_list.project_title = :projectTitle 
+        AND pr.status = 'Approved'
+        AND pr.pr_number NOT IN (SELECT pr_request_number FROM rfq)
 ");
 
 $prQuery->execute(['projectTitle' => $projectTitle]);
 $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
+
+
+// Fetch PR numbers already in the RFQ table
+$rfqPRsQuery = $pdo->query("SELECT pr_request_number FROM rfq");
+$rfqPRs = $rfqPRsQuery->fetchAll(PDO::FETCH_COLUMN);
+
+
+
+// Fetch total ABC for the project title from the database
+if (isset($_POST['project_title'])) {
+    $project_title = $_POST['project_title'];
+    $sql = "SELECT total_abc 
+            FROM pmaf 
+            WHERE project_title = ? 
+            LIMIT 1";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$project_title]);
+    $total_abc = $stmt->fetchColumn(); // Get total_abc directly
+
+    echo json_encode([
+        'total_abc' => $total_abc ?: '0' // Return 0 if no value found
+    ]);
+}
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -89,16 +118,23 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
                                 <select id="prRequestNumber" name="pr_request_number" class="form-select">
                                     <option value="">-- Select PR Request Number --</option>
                                     <?php foreach ($approvedPRs as $pr): ?>
-                                        <option value="<?php echo $pr['pr_number']; ?>">
-                                            <?php echo $pr['pr_number'] . " - " . $pr['first_name'] . " " . $pr['last_name']; ?>
+                                        <option value="<?php echo $pr['pr_number']; ?>" 
+                                            data-enduser="<?php echo $pr['sector']; ?>"
+                                            <?php echo in_array($pr['pr_number'], $rfqPRs) ? 'disabled' : ''; ?>>
+                                            <?php echo $pr['pr_number']; ?> 
+                                            <?php echo in_array($pr['pr_number'], $rfqPRs) ? '(Already in RFQ)' : ''; ?>
                                         </option>
                                     <?php endforeach; ?>
+
                                 </select>
                             </div>
+
+                            <!-- End-User Field -->
                             <div class="col-md-6 mb-3">
                                 <label for="endUser" class="form-label">End-User</label>
                                 <input type="text" id="endUser" name="end_user" class="form-control" placeholder="End User Name" readonly>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -130,8 +166,8 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="approvedBudget" class="form-label">Approved Budget for the Contract</label>
-                                <input type="number" id="approvedBudget" name="approved_budget" class="form-control" placeholder="Enter Amount">
+                                <label for="total-abc" class="form-label">Approved Budget for the Contract (ABC)</label>
+                                <input type="number" id="total-abc" name="total_abc" class="form-control" placeholder="Auto-filled Total ABC" readonly>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="procurementMode" class="form-label">Mode of Procurement</label>
@@ -222,6 +258,7 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <!-- Scripts -->
+<!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -234,21 +271,42 @@ $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
             }
         });
 
-        // Populate End-User field when PR Request Number changes
-        document.getElementById('prRequestNumber').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex].text;
-            const endUserInput = document.getElementById('endUser');
 
-            if (selectedOption) {
-                const endUserName = selectedOption.split(' - ')[1];
-                endUserInput.value = endUserName;
-            } else {
-                endUserInput.value = '';
-            }
+        document.getElementById('prRequestNumber').addEventListener('change', function () {
+            var selectedOption = this.options[this.selectedIndex];
+            var projectTitle = selectedOption.getAttribute('data-projecttitle'); // Fetch project title associated with PR
+
+            // AJAX request to fetch total_abc based on projectTitle
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'pmf.php', true); // Make sure this path is correct
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    var totalAbc = response.total_abc || '0'; // Use the fetched total_abc or fallback to '0'
+                    document.getElementById('total-abc').value = totalAbc; // Update the total_abc field
+                }
+            };
+            
+            xhr.send('project_title=' + encodeURIComponent(projectTitle));
         });
+
+
+
+
     </script>
     <script>
+
+        document.getElementById('prRequestNumber').addEventListener('change', function () {
+            var selectedOption = this.options[this.selectedIndex];
+            var endUserName = selectedOption.getAttribute('data-enduser');
+            document.getElementById('endUser').value = endUserName ? endUserName : '';
+        });
+
         let rowCount = 0;
+
+        
 
         document.getElementById('addRowForm').addEventListener('submit', function(event) {
             event.preventDefault();

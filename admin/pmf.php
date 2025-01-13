@@ -10,6 +10,9 @@ if (!isset($_SESSION['user_id'])) {
 
 // Include database connection
 require_once '../admin/src/config/database.php';
+require_once '../admin/src/config/pdo.php';
+
+
 
 // Fetch approved projects from the database
 $query = "SELECT project_title FROM ppmp_list WHERE status = 'approved'";
@@ -20,6 +23,49 @@ if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         $approvedProjects[] = $row['project_title'];
     }
+}
+
+// Fetch project titles already present in the pmaf table
+$pmafQuery = "SELECT project_title FROM pmaf";
+$pmafResult = mysqli_query($conn, $pmafQuery);
+
+$usedProjects = [];
+if ($pmafResult) {
+    while ($row = mysqli_fetch_assoc($pmafResult)) {
+        $usedProjects[] = $row['project_title'];
+    }
+}
+
+// Filter out the projects that are already used in pmaf
+$availableProjects = array_diff($approvedProjects, $usedProjects);
+
+
+// Fetch funds from the database
+$query = "SELECT * FROM fund";
+$stmt = $pdo->prepare($query);
+$stmt->execute();
+$funds = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $fund_source = $_POST['fund_source'];
+    $custom_fund = $_POST['custom_fund'] ?? '';
+    
+    // Use custom input if 'Others' is selected
+    $selected_fund = ($fund_source === 'Others') ? $custom_fund : $fund_source;
+
+    // Ensure that if 'Others' is selected, the custom fund is not empty
+    if ($fund_source === 'Others' && empty($custom_fund)) {
+        echo "<script>alert('Please specify a custom fund source.'); window.history.back();</script>";
+        exit();
+    }
+
+    // Insert into PMAF database
+    $insertQuery = "INSERT INTO pmaf (fund_source) VALUES (:fund_source)";
+    $insertStmt = $pdo->prepare($insertQuery);
+    $insertStmt->execute(['fund_source' => $selected_fund]);
+
+    echo "<script>alert('Fund source saved successfully!'); window.location.href='pmf.php';</script>";
 }
 
 ?>
@@ -37,6 +83,16 @@ if ($result) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="src/css/pmaf.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function toggleCustomInput(select) {
+            const customInput = document.getElementById('custom-fund');
+            if (select.value === 'Others') {
+                customInput.style.display = 'block';
+            } else {
+                customInput.style.display = 'none';
+            }
+        }
+    </script>
 </head>
 
 <body>
@@ -101,34 +157,57 @@ if ($result) {
                             <!-- Dropdown to select project title -->
                             <select id="projectTitle" name="project_title" class="form-select" required>
                                 <option value="">-- Select Project Title --</option>
-                                <?php foreach ($approvedProjects as $projectTitle): ?>
-                                    <option value="<?= $projectTitle ?>"><?= $projectTitle ?></option>
+                                
+                                <!-- Available projects -->
+                                <?php foreach ($availableProjects as $projectTitle): ?>
+                                    <option value="<?= htmlspecialchars($projectTitle) ?>"><?= htmlspecialchars($projectTitle) ?></option>
+                                <?php endforeach; ?>
+
+                                <!-- Used projects (disabled) -->
+                                <?php foreach ($usedProjects as $projectTitle): ?>
+                                    <option value="<?= htmlspecialchars($projectTitle) ?>" disabled><?= htmlspecialchars($projectTitle) ?> (Used)</option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
 
                         <!-- Funds Section -->
                         <div class="mb-4">
-                            <h5>Funds Availability</h5>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#otherFundsModal" onclick="addFund()">
-                                <i class="fas fa-plus"></i> Add Fund
-                            </button>
-                            <div id="fundList" class="row mt-3"></div>
+                            <label for="fund_source" class="form-label">Funds Availability</label>
+                            <select name="fund_source" id="fund_source" class="form-select" onchange="toggleCustomInput(this)" required>
+                                <option value="" disabled selected>Select a fund source</option>
+                                <?php foreach ($funds as $fund): ?>
+                                    <option value="<?php echo htmlspecialchars($fund['name']); ?>">
+                                        <?php echo htmlspecialchars($fund['name']); ?>
+                                    </option>
+
+                                    <?php endforeach; ?>
+                                    <option value="Others">Others</option>
+                            </select>
                         </div>
 
+                        <div class="mb-3" id="custom-fund" style="display: none;">
+                            <label for="custom_fund" class="custom-fund">Specify Other Fund Source</label>
+                            <input type="text" name="custom_fund" id="custom_fund" class="form-control" placeholder="Enter fund source">
+                        </div>
+                        
+                        <!-- Total ABC -->
+                        <!-- Total ABC Input -->
+                        <div class="mb-4">
+                            <label for="totalABC" class="form-label">Total Approved Budget for the Contract (ABC)</label>
+                            <input type="number" id="totalABC" name="total_abc" class="form-control" placeholder="Enter Total ABC amount" min="0" step="any" required>
+                        </div>
+
+                                   
                         <!-- MOOE Section -->
                         <div class="mb-4">
-                            <h5>Maintenance of Operating Expenses (MOOE)</h5>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addMooe()">
-                                <i class="fas fa-plus"></i> Add MOOE
-                            </button>
-                            <div id="mooeList" class="row mt-3"></div>
+                            <label for="co" class="form-label">Maintenance and Other Operating Expenses (MOOE)</label>
+                            <input type="number" id="mooe" name="mooe" class="form-control" placeholder="Enter MOOE Amount" min="0" step="any">
                         </div>
 
                         <!-- CO -->
                         <div class="mb-4">
-                            <label for="co" class="form-label fw-bold">Contract Order Amount (CO)</label>
-                            <input type="number" id="co" name="co" class="form-control" placeholder="Enter CO amount" min="0" step="any">
+                            <label for="co" class="form-label">Contract Order Amount (CO)</label>
+                            <input type="number" id="co" name="co" class="form-control" placeholder="Enter CO Amount" min="0" step="any">
                         </div>
 
                         <!-- Hidden Inputs to Store Dynamic Data -->
@@ -154,79 +233,42 @@ if ($result) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        function addFund() {
-            Swal.fire({
-                title: 'Add Fund',
-                input: 'text',
-                inputPlaceholder: 'Enter fund name',
-                confirmButtonText: 'Add',
-                showCancelButton: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const fundList = document.getElementById('fundList');
-                    const div = document.createElement('div');
-                    div.classList.add('col-md-4', 'mb-3');
-                    div.innerHTML = `<div class="d-flex justify-content-between align-items-center">
-                ${result.value}
-                <button class="btn btn-danger btn-sm mt-2" onclick="this.parentElement.parentElement.remove(); updateFunds();">Delete</button>
-            </div>`;
-                    fundList.appendChild(div);
-                    updateFunds();
-                }
-            });
+        function toggleCustomInput(select) {
+            const customInput = document.getElementById('custom-fund');
+            if (select.value === 'Others') {
+                customInput.style.display = 'block';
+            } else {
+                customInput.style.display = 'none';
+            }
         }
-
-        function updateFunds() {
-            const funds = Array.from(document.querySelectorAll('#fundList .d-flex')).map(el =>
-                el.firstChild.textContent.trim()
-            );
-            document.getElementById('funds').value = JSON.stringify(funds);
-        }
-
-        function addMooe() {
-            Swal.fire({
-                title: 'Add MOOE',
-                input: 'text',
-                inputPlaceholder: 'Enter MOOE name',
-                confirmButtonText: 'Add',
-                showCancelButton: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const mooeList = document.getElementById('mooeList');
-                    const div = document.createElement('div');
-                    div.classList.add('col-md-4', 'mb-3');
-                    div.innerHTML = `<div class="d-flex justify-content-between align-items-center">
-                ${result.value}
-                <button class="btn btn-danger btn-sm mt-2" onclick="this.parentElement.parentElement.remove(); updateMooe();">Delete</button>
-            </div>`;
-                    mooeList.appendChild(div);
-                    updateMooe();
-                }
-            });
-        }
-
-        function updateMooe() {
-            const mooe = Array.from(document.querySelectorAll('#mooeList .d-flex')).map(el =>
-                el.firstChild.textContent.trim()
-            );
-            document.getElementById('mooe').value = JSON.stringify(mooe);
-        }
-
-        document.getElementById('pmafForm').addEventListener('submit', async function(e) {
+        document.getElementById('pmafForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const formData = new FormData(this);
+            
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
 
+            const fundSource = document.getElementById('fund_source').value;
+            if (fundSource === 'Others') {
+                const customFund = document.getElementById('custom_fund').value.trim();
+                if (customFund) {
+                    formData.set('fund_source', customFund); // Override the fund source with the custom value
+                } else {
+                    Swal.fire('Error!', 'Please specify a custom fund source.', 'error');
+                    return; // Prevent form submission if custom fund is not provided
+                }
+            }
             const projectTitleValue = document.getElementById('projectTitle').value;
             const selectedModalities = Array.from(document.querySelectorAll('input[name="modality[]"]:checked')).map(el => el.value);
             const funds = Array.from(document.querySelectorAll('#fundList div')).map(el => el.textContent.trim().replace('X', ''));
-            const mooeItems = Array.from(document.querySelectorAll('#mooeList div')).map(el => el.textContent.trim());
 
             // Append data to FormData
             formData.append('project_title', projectTitleValue);
             formData.append('modality', JSON.stringify(selectedModalities));
             formData.append('funds', JSON.stringify(funds));
-            formData.append('mooe', JSON.stringify(mooeItems));
+            formData.append('mooe', document.getElementById('mooe').value);
             formData.append('co', document.getElementById('co').value);
 
             Swal.fire({
@@ -259,6 +301,10 @@ if ($result) {
                         } else if (choice.dismiss === Swal.DismissReason.cancel) {
                             // Trigger PDF download
                             window.location.href = `src/process/download_pdf_pmf.php?project_title=${encodeURIComponent(projectTitleValue)}`;
+
+                            setTimeout(() => {
+                                window.location.href = `rfq.php?project_title=${encodeURIComponent(projectTitleValue)}`;
+                            }, 3000);  // 3-second delay (adjust the timing if needed)
                         }
                     });
                 } else {

@@ -2,7 +2,7 @@
 ob_start();
 
 // Include the TCPDF library and database connection
-require_once(__DIR__ . '/../../../vendor/tecnickcom/tcpdf/tcpdf.php');
+require_once('../../vendor/autoload.php');
 require_once('../config/database.php');
 
 // Check if reso_id parameter exists
@@ -50,17 +50,15 @@ while ($row = $result->fetch_assoc()) {
 }
 
 
-class MYPDF extends TCPDF
-{
-    public function Header()
-    {
-        $this->SetFont('helvetica', 'B', 10);
-
-        // Add image using TCPDF Image method
-        // Parameters: Image(file, x, y, width, height)
-        $this->Image('../../../assets/images/logo.jpg', 20, 6, 17); // Adjust coordinates and size as needed
-
-        $html = <<<EOD
+class MYPDF extends TCPDF { 
+        public function Header() {
+            $this->SetFont('helvetica', 'B', 10);
+            
+            // Add image using TCPDF Image method
+            // Parameters: Image(file, x, y, width, height)
+            $this->Image('../../../assets/images/logo.jpg', 20, 6, 17); // Adjust coordinates and size as needed
+            
+            $html = <<<EOD
             <div style="margin-top: 10px;"></div> 
             <table border="1" cellpadding="5" cellspacing="0" style="border-collapse:collapse;width:100%;text-align:center;">
                 <tr style="background-color:white;color:black;">
@@ -75,43 +73,44 @@ class MYPDF extends TCPDF
                 </tr>
             </table>
             EOD;
-        $this->writeHTML($html, true, false, false, false, '');
+            $this->writeHTML($html, true, false, false, false, '');
+        }
+        
     }
-}
 
-$pdf = new MYPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    $pdf = new MYPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
 
-// Set document information
-$pdf->SetCreator('Admin');
-$pdf->SetAuthor('System Administrator');
-$pdf->SetTitle('Resolution');
+    // Set document information
+    $pdf->SetCreator('Admin');
+    $pdf->SetAuthor('System Administrator');
+    $pdf->SetTitle('Resolution');
 
-// Set margins and add page
-$pdf->SetMargins(15, 45, 15);
-$pdf->SetHeaderMargin(0);
-$pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
-$pdf->AddPage();
-$pdf->SetFont('helvetica', '', 12);
+    // Set margins and add page
+    $pdf->SetMargins(15, 45, 15);
+    $pdf->SetHeaderMargin(0);
+    $pdf->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
+    $pdf->AddPage();
+    $pdf->SetFont('helvetica', '', 12);
 
 
-$date = date('F j, Y', strtotime($resolution['created_at']));
-$description = ucwords($resolution['description']);
-$name = ucwords($resolution['supplier_name']);
-$amountInWords = ucwords($resolution['total_amount_words']);
+    $date = date('F j, Y', strtotime($resolution['created_at']));
+    $description = ucwords($resolution['description']);
+    $name = ucwords($resolution['supplier_name']);
+    $amountInWords = ucwords($resolution['total_amount_words']);
+    
+    // Generate "Whereas" section
+    $whereasContent = "";
+    foreach ($whereasStatements as $statement) {
+        $whereasContent .= "<li>$statement</li>";
+    }
+    
+    // Generate "Hereby" section
+    $herebyContent = "";
+    foreach ($herebyStatements as $statement) {
+        $herebyContent .= "<li>$statement</li>";
+    }
 
-// Generate "Whereas" section
-$whereasContent = "";
-foreach ($whereasStatements as $statement) {
-    $whereasContent .= "<li>$statement</li>";
-}
-
-// Generate "Hereby" section
-$herebyContent = "";
-foreach ($herebyStatements as $statement) {
-    $herebyContent .= "<li>$statement</li>";
-}
-
-$html = <<<EOD
+    $html = <<<EOD
         <header>
             <p style="text-align:center;">
                 <b>RESOLUTION</b><br>
@@ -157,11 +156,12 @@ $html = <<<EOD
             </p><br>
         </p>
     EOD;
-// Write the HTML content
-$pdf->writeHTML($html, true, false, true, false, '');
+    // Write the HTML content
+    $pdf->writeHTML($html, true, false, true, false, '');
 
-// Clear output buffer
-ob_end_clean();
+    // Clear output buffer
+    ob_end_clean();
 
-// Output PDF document
-$pdf->Output('Resolution.pdf', 'D');
+    // Output PDF document
+    $pdf->Output('Resolution.pdf', 'D');
+?>

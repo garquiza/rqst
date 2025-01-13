@@ -176,18 +176,18 @@ if (isset($_GET['noa_id'])) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        $(document).ready(function() {
-            $("#downloadNTP").click(function(e) {
-                e.preventDefault()
+    $(document).ready(function() {
+        $("#downloadNTP").click(function(e){
+            e.preventDefault()
+            
+            let noa_id = `<?php echo $selectedNOA; ?>`
 
-                let noa_id = `<?php echo $selectedNOA; ?>`
-
-                noa_id == 0 ? Swal.fire({
+            noa_id == 0 ? Swal.fire({
                     text: "Please select a Notice of Award (NOA) to continue.",
                     icon: 'info',
                 }) : window.location.href = `src/process/download_pdf_ntp.php?noa_id=${noa_id}`;
-            })
         })
+    })
     </script>
 </body>
 

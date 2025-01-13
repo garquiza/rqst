@@ -156,6 +156,7 @@ $total_pages = ceil($total_rows / $limit);
                 </div>
             </div>
 
+
         <!-- Search and Filter Bar -->
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
             <!-- Search Bar -->
@@ -167,6 +168,7 @@ $total_pages = ceil($total_rows / $limit);
             <!-- Status and Year Filter Dropdown -->
             <form method="get" class="d-flex mb-2">
                 <select name="year" class="form-select me-2" onchange="this.form.submit()">
+
                     <option value="">All Years</option>
                     <?php
                     // Get the current year
@@ -185,6 +187,7 @@ $total_pages = ceil($total_rows / $limit);
                     <?php endwhile; ?>
                 </select>
 
+
                 <select name="status" class="form-select me-2" onchange="this.form.submit()">
                     <option value="">All Status</option>
                     <option value="approved" <?php if ($status_filter == 'approved') echo 'selected'; ?>>Approved</option>
@@ -194,6 +197,7 @@ $total_pages = ceil($total_rows / $limit);
                 <button type="submit" class="btn btn-outline-primary">Filter</button>
             </form>
         </div>
+
 
             <!-- Purchase Request Table -->
             <div class="table-responsive mt-4">
@@ -248,9 +252,11 @@ $total_pages = ceil($total_rows / $limit);
                                     <button class="btn btn-outline-danger btn-sm" title="Delete PR" onclick="confirmDelete('<?php echo $row['pr_id']; ?>')">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
+
                                     <button class="btn btn-outline-secondary btn-sm" title="Tag as Completed" onclick="tagAsCompleted('<?php echo $row['pr_id']; ?>')">
                                         Tag as Completed
                                     </button>                                    
+
                                     <button class="btn btn-outline-success btn-sm" title="Approve PR" onclick="changeStatus('<?php echo $row['pr_id']; ?>', 'Approved')">
                                         ✔ 
                                     </button>
@@ -335,6 +341,7 @@ $total_pages = ceil($total_rows / $limit);
             });
         }
 
+
 function tagAsCompleted(pr_id) {
     console.log('PR ID to complete:', pr_id); // Log the PR ID
     Swal.fire({
@@ -378,7 +385,6 @@ function tagAsCompleted(pr_id) {
 
 
 
-       
         function changeStatus(pr_id, status) {
             Swal.fire({
                 title: `Are you sure you want to ${status} this PR?`,

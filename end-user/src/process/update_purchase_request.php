@@ -6,7 +6,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get the form data
     $pr_number = $_POST['pr_number'];
     $approver = $_POST['approver'];
+
     $status = 'Pending'; // Reset status to Pending
+
     $pr_process_status = $_POST['pr_process_status'];
 
     // Prepare the update query for purchase request
@@ -15,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $update_stmt->bind_param("ssss", $approver, $status, $pr_process_status, $pr_number);
 
     if ($update_stmt->execute()) {
+
         // Process the updated unit cost values
         if (isset($_POST['unit_cost'])) {
             foreach ($_POST['unit_cost'] as $inventory_id => $unit_cost) {

@@ -229,6 +229,7 @@ $total_pages = ceil($total_rows / $limit);
                                     <a href="download_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-primary btn-sm" title="Download PR">
                                         <i class="fas fa-download"></i>
                                     </a>
+
                                     <a href="update_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-primary btn-sm" title="Update PR">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -305,6 +306,7 @@ $total_pages = ceil($total_rows / $limit);
             }
         });
     }
+
      // Function to change the process status
 function changeStatus(pr_number, action) {
     Swal.fire({
@@ -353,7 +355,6 @@ if (updatesEnabled === 0) {
         button.setAttribute('disabled', 'true');
     });
 }
-
 
     </script>
 </body>
