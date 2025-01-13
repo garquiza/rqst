@@ -39,11 +39,10 @@ if ($yearResult) {
     }
 }
 
-// Fetch the value of `toggle_enabled` from the `settings` table
-$toggleQuery = "SELECT toggle_enabled FROM settings WHERE id = 1";
-$toggleResult = mysqli_query($conn, $toggleQuery);
-$currentToggleState = mysqli_fetch_assoc($toggleResult)['toggle_enabled'];
-
+// Fetch the value of `updates_enabled` from the `settings` table
+$updatesQuery = "SELECT updates_enabled FROM settings WHERE id = 1";
+$updatesResult = mysqli_query($conn, $updatesQuery);
+$updatesEnabled = mysqli_fetch_assoc($updatesResult)['updates_enabled'];
 // Fetch PPMP data from the database
 $query = "SELECT ppmp_id, project_title, approver, date_created, status FROM ppmp_list";
 $result = mysqli_query($conn, $query);
