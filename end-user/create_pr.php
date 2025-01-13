@@ -13,13 +13,14 @@ $user_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'User';
 // Include database connection
 include('src/config/database.php');
 
-// Query to fetch inventory items
-$query = "SELECT inventory_id, item_name, item_description, unit_cost FROM inventory";
-$result = mysqli_query($conn, $query);
-
-// Query to fetch approved PPMP entries
-$ppmpQuery = "SELECT ppmp_id, project_title FROM ppmp_list WHERE status = 'approved'";
+$ppmpQuery = "
+    SELECT ppmp_list.ppmp_id, ppmp_list.project_title, ppmp_form.general_description
+    FROM ppmp_list
+    LEFT JOIN ppmp_form ON ppmp_list.ppmp_id = ppmp_form.ppmp_id
+    WHERE ppmp_list.status = 'approved'
+";
 $ppmpResult = mysqli_query($conn, $ppmpQuery);
+
 ?>
 
 <!DOCTYPE html>
@@ -74,30 +75,30 @@ $ppmpResult = mysqli_query($conn, $ppmpQuery);
                     </div>
                 </div>
 
-                <div class="row g-3">
-                    <!-- Department -->
-                    <div class="col-md-6">
-                        <label for="department" class="form-label">Department:</label>
-                        <input type="text" class="form-control" id="department" name="department" required>
-                    </div>
-                    <!-- Section -->
-                    <div class="col-md-6">
-                        <label for="section" class="form-label">Section:</label>
-                        <input type="text" class="form-control" id="section" name="section" required>
-                    </div>
-                </div>
-
                 <div class="row g-3 mt-3">
-                    <!-- Select Item -->
+                    <!-- Select Item (general_description) -->
                     <div class="col-md-12">
                         <label for="inventory_item" class="form-label">Select Item:</label>
                         <select class="form-select" id="inventory_item" name="inventory_item" required>
                             <option value="">Select Item</option>
-                            <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                                <option value="<?php echo $row['inventory_id']; ?>" data-unit-cost="<?php echo $row['unit_cost']; ?>">
-                                    <?php echo htmlspecialchars($row['item_name']); ?> - <?php echo htmlspecialchars($row['item_description']); ?>
-                                </option>
-                            <?php endwhile; ?>
+                            <?php
+                            // Reset the pointer of the result set to fetch again
+                            mysqli_data_seek($ppmpResult, 0); // Reset to the beginning
+
+                            while ($ppmpRow = mysqli_fetch_assoc($ppmpResult)):
+                                // Check if general_description is valid
+                                $descriptions = json_decode($ppmpRow['general_description']);
+                                if (is_array($descriptions)):
+                                    foreach ($descriptions as $description):
+                            ?>
+                                        <option value="<?php echo $ppmpRow['ppmp_id']; ?>" data-description="<?php echo htmlspecialchars($description); ?>">
+                                            <?php echo htmlspecialchars($description); ?>
+                                        </option>
+                            <?php
+                                    endforeach;
+                                endif;
+                            endwhile;
+                            ?>
                         </select>
                     </div>
                 </div>
@@ -208,6 +209,35 @@ $ppmpResult = mysqli_query($conn, $ppmpQuery);
                         });
                 }
             });
+        });
+        document.getElementById('ppmp_id').addEventListener('change', function() {
+            const ppmpId = this.value;
+
+            // Clear previous options
+            const inventoryItemSelect = document.getElementById('inventory_item');
+            inventoryItemSelect.innerHTML = '<option value="">Select Item</option>';
+
+            if (ppmpId) {
+                // Fetch items for the selected PPMP ID using AJAX
+                fetch('src/process/get_inventory_items.php?ppmp_id=' + ppmpId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.items && data.items.length > 0) {
+                            // Loop through the descriptions and add each one as a new option
+                            data.items.forEach(item => {
+                                if (item.general_description && Array.isArray(item.general_description)) {
+                                    item.general_description.forEach(description => {
+                                        const option = document.createElement('option');
+                                        option.value = description; // Use the description text as the value
+                                        option.textContent = description; // Display the description text
+                                        inventoryItemSelect.appendChild(option);
+                                    });
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Error fetching inventory items:', error));
+            }
         });
     </script>
 </body>
