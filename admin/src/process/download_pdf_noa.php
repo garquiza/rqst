@@ -2,7 +2,7 @@
 ob_start();
 
 // Include the TCPDF library and database connection
-require_once(__DIR__ . '/../../../vendor/tecnickcom/tcpdf/tcpdf.php');
+require_once('../../vendor/autoload.php');
 require_once('../config/database.php');
 
 // Check if noa_id parameter exists

@@ -40,7 +40,7 @@
                         <input class="form-check-input" type="checkbox" id="rememberMe">
                         <label class="form-check-label" for="rememberMe">Remember me</label>
                     </div>
-                    <a href="../admin/forgot.php">Forgot Password?</a>
+                    <a href="forgot.php">Forgot Password?</a>
                 </div>
                 <button type="submit" class="btn btn-signin">SIGN IN</button>
             </form>

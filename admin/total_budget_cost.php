@@ -142,15 +142,13 @@ $sectors = $stmt->fetchAll(PDO::FETCH_ASSOC);
         document.addEventListener("DOMContentLoaded", function() {
             const budgetAmountElement = document.getElementById("budget-amount");
 
-            // Removed the budget amount edit functionality, keeping only display
-
             // Add Sector Button Event
             document.querySelector('.add-sector-btn').addEventListener('click', function() {
                 Swal.fire({
                     title: 'Add New Sector',
                     html: `
-                    <input type="text" id="sector-name" class="swal2-input" placeholder="Sector Name">
-                `,
+            <input type="text" id="sector-name" class="swal2-input" placeholder="Sector Name">
+        `,
                     showCancelButton: true,
                     confirmButtonText: 'Add',
                     preConfirm: () => {
@@ -161,29 +159,32 @@ $sectors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             return false;
                         }
 
+                        // Set budget to 0 for new sectors
                         return {
-                            name
+                            name,
+                            budget: 0
                         };
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         const {
-                            name
+                            name,
+                            budget
                         } = result.value;
 
-                        // Send AJAX request to add the sector
+                        // Send AJAX request to add the sector with budget set to 0
                         fetch('src/process/add_sector.php', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
                                 },
                                 body: JSON.stringify({
-                                    name: name
+                                    name: name,
+                                    budget: budget
                                 }),
                             })
                             .then(response => response.json())
                             .then(data => {
-                                console.log(data); // Add this to see the response in your console
                                 if (data.success) {
                                     Swal.fire('Success!', 'Sector has been added.', 'success').then(() => {
                                         location.reload(); // Reload page to show the updated table
@@ -193,10 +194,9 @@ $sectors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 }
                             })
                             .catch((error) => {
-                                console.error(error); // Log any errors to the console
+                                console.error(error);
                                 Swal.fire('Error!', 'Something went wrong. Please try again later.', 'error');
                             });
-
                     }
                 });
             });
@@ -263,35 +263,41 @@ $sectors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 editIcon.addEventListener('click', function() {
                     const sectorId = this.getAttribute('data-id'); // Get sector ID
                     const sectorName = this.getAttribute('data-name'); // Get sector name
+                    const sectorBudget = this.getAttribute('data-budget'); // Get sector budget
 
                     // Show Swal modal for editing sector
                     Swal.fire({
                         title: 'Edit Sector',
                         html: `
-                        <input type="text" id="edit-sector-name" class="swal2-input" value="${sectorName}" placeholder="Sector Name">
-                    `,
+                <input type="text" id="edit-sector-name" class="swal2-input" value="${sectorName}" placeholder="Sector Name">
+                <input type="number" id="edit-sector-budget" class="swal2-input" value="${sectorBudget}" placeholder="Budget">
+            `,
                         showCancelButton: true,
                         confirmButtonText: 'Update',
                         preConfirm: () => {
                             const name = document.getElementById('edit-sector-name').value.trim();
-                            if (!name) {
-                                Swal.showValidationMessage('Please provide a valid sector name!');
+                            const budget = document.getElementById('edit-sector-budget').value.trim();
+
+                            if (!name || !budget) {
+                                Swal.showValidationMessage('Please provide valid inputs!');
                                 return false;
                             }
 
                             return {
                                 id: sectorId,
-                                name: name
+                                name: name,
+                                budget: budget
                             };
                         }
                     }).then((result) => {
                         if (result.isConfirmed) {
                             const {
                                 id,
-                                name
+                                name,
+                                budget
                             } = result.value;
 
-                            // Send AJAX request to update sector name
+                            // Send AJAX request to update sector name and budget
                             fetch('src/process/edit_sector.php', {
                                     method: 'POST',
                                     headers: {
@@ -299,13 +305,14 @@ $sectors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                     },
                                     body: JSON.stringify({
                                         id,
-                                        name
+                                        name,
+                                        budget
                                     }),
                                 })
                                 .then(response => response.json())
                                 .then(data => {
                                     if (data.success) {
-                                        Swal.fire('Success!', 'Sector name has been updated.', 'success').then(() => {
+                                        Swal.fire('Success!', 'Sector details have been updated.', 'success').then(() => {
                                             location.reload(); // Reload page to reflect changes
                                         });
                                     } else {
@@ -319,6 +326,7 @@ $sectors = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     });
                 });
             });
+
         });
     </script>
 </body>

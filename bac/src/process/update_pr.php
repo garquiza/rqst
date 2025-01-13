@@ -4,18 +4,21 @@ session_start();
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'User  not logged in']);
+    echo json_encode(['success' => false, 'message' => 'User not logged in']);
     exit();
 }
 
 // Include database connection
-require_once '../config/database.php';
+require_once '../bac/src/config/database.php';
 
 // Check if required parameters are set
 if (isset($_POST['pr_id']) && isset($_POST['status'])) {
     $pr_id = intval($_POST['pr_id']);
     $status = $_POST['status'];
     $approver_id = $_SESSION['user_id'];  // The currently logged-in user's ID
+
+    // Log incoming parameters
+    error_log("Incoming Request - PR ID: $pr_id, Status: $status, Approver ID: $approver_id");
 
     // Fetch the approver's full name from the admin_users table
     $approver_query = "SELECT CONCAT(first_name, ' ', last_name) AS full_name FROM admin_users WHERE id = ?";
@@ -25,6 +28,7 @@ if (isset($_POST['pr_id']) && isset($_POST['status'])) {
         echo json_encode(['success' => false, 'message' => 'Database query preparation failed']);
         exit();
     }
+
     $stmt_approver->bind_param('i', $approver_id);
     $stmt_approver->execute();
     $approver_result = $stmt_approver->get_result();
@@ -42,6 +46,7 @@ if (isset($_POST['pr_id']) && isset($_POST['status'])) {
     $stmt = $conn->prepare($update_query);
 
     if (!$stmt) {
+        error_log("Update query preparation failed: " . $conn->error);
         echo json_encode(['success' => false, 'message' => 'Database query preparation failed']);
         exit();
     }
@@ -50,26 +55,36 @@ if (isset($_POST['pr_id']) && isset($_POST['status'])) {
 
     // Execute the update
     if ($stmt->execute()) {
-        // Prepare to log the history
-        $title = "Purchase Request Updated";
-        $description = "Purchase Request ID $pr_id has been updated to status '$status' by $approver_name.";
+        if ($stmt->affected_rows > 0) {
+            // Log success
+            error_log("PR ID $pr_id updated to '$status' by $approver_name");
 
-        // Insert into history_logs
-        $log_query = "INSERT INTO history_logs (title, description) VALUES (?, ?)";
-        $stmt_log = $conn->prepare($log_query);
+            // Insert into history_logs
+            $title = "Purchase Request Updated";
+            $description = "Purchase Request ID $pr_id has been updated to status '$status' by $approver_name.";
+            $log_query = "INSERT INTO history_logs (title, description) VALUES (?, ?)";
+            $stmt_log = $conn->prepare($log_query);
 
-        if (!$stmt_log) {
-            echo json_encode(['success' => false, 'message' => 'Failed to prepare history log query']);
-            exit();
+            if (!$stmt_log) {
+                error_log("History log query preparation failed: " . $conn->error);
+                echo json_encode(['success' => false, 'message' => 'Failed to prepare history log query']);
+                exit();
+            }
+
+            $stmt_log->bind_param('ss', $title, $description);
+            $stmt_log->execute();
+
+            echo json_encode(['success' => true, 'message' => 'Status updated successfully and logged']);
+        } else {
+            error_log("No rows updated for PR ID: $pr_id");
+            echo json_encode(['success' => false, 'message' => 'No rows updated. Please check the PR ID']);
         }
-
-        $stmt_log->bind_param('ss', $title, $description);
-        $stmt_log->execute();
-
-        echo json_encode(['success' => true, 'message' => 'Status updated successfully and logged']);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update status']);
+        error_log("Update query execution failed: " . $stmt->error);
+        echo json_encode(['success' => false, 'message' => 'Failed to execute update query']);
     }
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid data']);
 }
+
+?>
