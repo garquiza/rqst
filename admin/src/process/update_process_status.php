@@ -15,6 +15,9 @@ if (isset($data['pr_id']) && isset($data['status'])) {
     $status = mysqli_real_escape_string($conn, $data['status']);
     $approver_id = $_SESSION['user_id'];  // Fetch approver ID from the session
 
+    // Check if a year filter is provided
+    $year_filter = isset($data['year']) ? (int)$data['year'] : null;
+
     // Fetch the approver's full name from the admin_users table
     $approver_query = "SELECT CONCAT(first_name, ' ', last_name) AS full_name FROM admin_users WHERE id = ?";
     $stmt_approver = $conn->prepare($approver_query);
@@ -37,18 +40,22 @@ if (isset($data['pr_id']) && isset($data['status'])) {
     $approver_name = $approver_data['full_name'];
 
     // Prepare the SQL query with placeholders to prevent SQL injection
-    if ($status === 'Rejected') {
-        // Special handling for rejected PR if needed
-        $update_query = "UPDATE purchase_requests SET pr_process_status = ?, status = ?, approver = ? WHERE pr_id = ?";
-    } else {
-        // Update for approved PR
-        $update_query = "UPDATE purchase_requests SET pr_process_status = ?, status = ?, approver = ? WHERE pr_id = ?";
+    $update_query = "UPDATE purchase_requests SET pr_process_status = ?, status = ?, approver = ? WHERE pr_id = ?";
+
+    // If year filter is provided, add it to the WHERE clause
+    if ($year_filter) {
+        $update_query .= " AND YEAR(request_date) = ?";
     }
 
     $stmt = $conn->prepare($update_query);
 
     if ($stmt) {
-        $stmt->bind_param('sssi', $status, $status, $approver_name, $pr_id);
+        // Bind the parameters
+        if ($year_filter) {
+            $stmt->bind_param('sssii', $status, $status, $approver_name, $pr_id, $year_filter);
+        } else {
+            $stmt->bind_param('sssi', $status, $status, $approver_name, $pr_id);
+        }
 
         // Execute the query
         if ($stmt->execute()) {
