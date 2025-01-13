@@ -125,32 +125,36 @@ if ($result_items->num_rows > 0) {
                 </div>
             </div>
 
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>ITEM NO.</th>
-                        <th>UNIT</th>
-                        <th>ITEM DESCRIPTION</th>
-                        <th>QUANTITY</th>
-                        <th>UNIT COST</th>
-                        <th>TOTAL COST</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php while ($item = $result_items->fetch_assoc()):
-                        $total_amount += $item['total_cost']; // Accumulate total cost
-                    ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($item['item_no']); ?></td>
-                            <td><?php echo htmlspecialchars($item['unit']); ?></td>
-                            <td><?php echo htmlspecialchars($item['item_name']); ?></td>
-                            <td><?php echo htmlspecialchars($item['quantity']); ?></td>
-                            <td><?php echo number_format($item['unit_cost'], 2); ?></td>
-                            <td><?php echo number_format($item['total_cost'], 2); ?></td>
-                        </tr>
-                    <?php endwhile; ?>
-                </tbody>
-            </table>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ITEM NO.</th>
+            <th>UNIT</th>
+            <th>ITEM DESCRIPTION</th>
+            <th>QUANTITY</th>
+            <th>UNIT COST</th>
+            <th>TOTAL COST</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php while ($item = $result_items->fetch_assoc()): 
+            $total_amount += $item['total_cost']; // Accumulate total cost
+        ?>
+            <tr>
+                <td><?php echo htmlspecialchars($item['item_no']); ?></td>
+                <td><?php echo htmlspecialchars($item['unit']); ?></td>
+                <td><?php echo htmlspecialchars($item['item_name']); ?></td>
+                <td><?php echo htmlspecialchars($item['quantity']); ?></td>
+                <td>
+                    <!-- Make the Unit Cost an input field -->
+                    <input type="number" class="form-control" name="unit_cost[<?php echo $item['inventory_id']; ?>]" value="<?php echo number_format($item['unit_cost'], 2); ?>" step="0.01" style="width: 100%;" required>
+                </td>
+                <td><?php echo number_format($item['total_cost'], 2); ?></td>
+            </tr>
+        <?php endwhile; ?>
+    </tbody>
+</table>
+
 
             <div class="mb-3">
                 <label for="purpose" class="form-label">Purpose</label>
@@ -164,13 +168,13 @@ if ($result_items->num_rows > 0) {
                 </div>
                 <div class="col">
                     <label for="approver" class="form-label">Approver</label>
-                    <input type="text" class="form-control" id="approver" name="approver" value="<?php echo htmlspecialchars($purchase_request['approver']); ?>" required>
+                    <input type="text" class="form-control" id="approver" name="approver" value="<?php echo htmlspecialchars($purchase_request['approver']); ?>" readonly>
                 </div>
             </div>
 
             <div class="mb-3">
                 <label for="pr_process_status" class="form-label">PR Process Status</label>
-                <input type="text" class="form-control" id="pr_process_status" name="pr_process_status" value="<?php echo htmlspecialchars($purchase_request['pr_process_status']); ?>" required>
+                <input type="text" class="form-control" id="pr_process_status" name="pr_process_status" value="<?php echo htmlspecialchars($purchase_request['pr_process_status']); ?>" readonly>
             </div>
 
             <button type="submit" class="btn btn-primary">Update Purchase Request</button>

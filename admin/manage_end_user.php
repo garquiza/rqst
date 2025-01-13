@@ -26,7 +26,7 @@ $offset = ($current_page - 1) * $items_per_page;
 $paginated_users = array_slice($end_users, $offset, $items_per_page);
 
 // Fetch the toggle state from the database
-$query = "SELECT updates_enabled FROM settings WHERE id = 1";
+$query = "SELECT updates_enabled FROM settings WHERE id = 1";  // Make sure 'updates_enabled' exists in the table
 $stmt = $pdo->prepare($query);
 $stmt->execute();
 $settings = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -39,27 +39,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode($input, true);
 
     // Ensure the expected data exists
-    if (isset($data['enableUpdates'])) {
-        $enableUpdates = $data['enableUpdates'] ? 1 : 0;
+    if (isset($data['updates_enabled'])) {
+        $toggleState = $data['updates_enabled'] ? 1 : 0; // Update the toggleState if it's provided
 
         try {
-            // Update the settings table to reflect the status of the toggle where ID=1
-            $query = "UPDATE settings SET updates_enabled = :status WHERE id = 1";
+            // Update the settings table to reflect the status of the toggle switch where ID=1
+            $query = "UPDATE settings SET updates_enabled = :state WHERE id = 1";  // Ensure you're using the correct column name
             $stmt = $pdo->prepare($query);
-            $stmt->execute([':status' => $enableUpdates]);
+            $stmt->execute([':state' => $toggleState]);
 
             // Return success response
-            echo json_encode(['status' => 'success', 'message' => 'Status updated successfully']);
+            echo json_encode(['status' => 'success', 'message' => 'Toggle state updated successfully']);
         } catch (PDOException $e) {
             // Return any error that occurs during the update
             echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
         }
     } else {
-        // Return error response if 'enableUpdates' is missing
-        echo json_encode(['status' => 'error', 'message' => 'Missing enableUpdates parameter']);
+        // Return error response if 'toggleState' is missing
+        echo json_encode(['status' => 'error', 'message' => 'Missing toggleState parameter']);
     }
     exit(); // Exit the script after processing the POST request
 }
+
+// Fetch the toggle switch state from the database
+$query = "SELECT updates_enabled FROM settings WHERE id = 4";
+$stmt = $pdo->prepare($query);
+$stmt->execute();
+$toggleConfig = $stmt->fetch(PDO::FETCH_ASSOC);
+$currentToggleState = $toggleConfig['updates_enabled'] ?? 0; // Default to 0 if not found
+
+// Handle POST request to update the toggle switch status
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get the raw POST data
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+
+    // Ensure the expected data exists
+    if (isset($data['toggleState'])) {
+        $toggleState = $data['toggleState'] ? 1 : 0;
+
+        try {
+            // Update the settings table to reflect the status of the toggle switch where ID=1
+            $query = "UPDATE settings SET updates_enabled = :state WHERE id = 1"; // Make sure column name matches
+            $stmt = $pdo->prepare($query);
+            $stmt->execute([':state' => $toggleState]);
+
+            // Return success response
+            echo json_encode(['status' => 'success', 'message' => 'Toggle state updated successfully']);
+        } catch (PDOException $e) {
+            // Return any error that occurs during the update
+            echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
+        }
+    } else {
+        // Return error response if 'toggleState' is missing
+        echo json_encode(['status' => 'error', 'message' => 'Missing toggleState parameter']);
+    }
+    exit(); // Exit the script after processing the POST request
+}
+
+
 
 ?>
 
@@ -124,7 +162,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         Enable/Disable Update for PPMP
                     </label>
                 </div>
-
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="toggle-updates" onchange="toggleUpdates(this)" <?php echo $toggleState ? 'checked' : ''; ?>>
+                    <label class="form-check-label" for="toggle-updates">
+                        Enable/Disable Update for PR
+                    </label>
+                </div>
             </div>
 
             <!-- Search Bar -->
@@ -152,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <td><?php echo htmlspecialchars($user['id']); ?></td>
                                     <td><?php echo htmlspecialchars($user['first_name']); ?></td>
                                     <td><?php echo htmlspecialchars($user['last_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($user['sector']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['sector'] ?? 'Not Available'); ?></td>
                                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                                     <td>
                                         <?php if ($user['status'] === 'activate'): ?>
