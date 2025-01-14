@@ -15,7 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 $rfq_id = isset($_POST['project']) ? intval($_POST['project']) : 0;
 $project_location = isset($_POST['project_location']) ? trim($_POST['project_location']) : '';
 $implementing_office = isset($_POST['implementing_office']) ? trim($_POST['implementing_office']) : '';
-$approved_budget = isset($_POST['approved_budget']) ? floatval($_POST['approved_budget']) : 0.00;
+$approved_budget = isset($_POST['approved_budget']) ? floatval($_POST['approved_budget']) : '';
 $prepared_by = isset($_POST['prepared_by']) ? trim($_POST['prepared_by']) : '';
 $verified_by = isset($_POST['verified_by']) ? trim($_POST['verified_by']) : '';
 

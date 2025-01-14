@@ -34,7 +34,6 @@ if ($stmt) {
         $user = $result_user->fetch_assoc();
         $user_name = htmlspecialchars($user['first_name'] . ' ' . $user['last_name']);
     }
-    $stmt->close();
 }
 
 if (isset($_POST['rfq_id'])) {
@@ -88,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $end_user = $_POST['end_user'];
 
     // Prepare the SQL statement
-    $stmt = $conn->prepare("INSERT INTO aoq (project_id, end_user) VALUES (?, ?)");
+    $stmt = $conn->prepare("INSERT INTO abstract_of_quotation (project_id, end_user) VALUES (?, ?)");
     $stmt->bind_param("is", $project_id, $end_user);
 
     if ($stmt->execute()) {
@@ -193,7 +192,16 @@ if ($titleResult) {
                         <tbody>
                             <!-- Default empty row for manual input -->
                             <tr>
-                                <td><input type="text" class="form-control" name="specification[]" required></td>
+                                <td class="form-control"required>
+                                    <select id="project" name="specification[]" class="form-control" required>
+                                        <option value="">Select a project</option>
+                                        <?php foreach ($projects as $project): ?>
+                                            <option value="<?php echo htmlspecialchars($project['rfq_id']); ?>">
+                                                <?php echo htmlspecialchars($project['project_title']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </td>
                                 <td><input type="number" class="form-control" name="quantity[]" required></td>
                                 <td><input type="text" class="form-control" name="unit[]" required></td>
                             </tr>
@@ -372,48 +380,67 @@ if ($titleResult) {
                         // Gather form data
                         const formData = $('#aoq-form').serialize();
 
-                        // Send the data via AJAX
+                        // First AJAX request for add_aoq_specification.php
                         $.ajax({
                             type: 'POST',
                             url: 'src/process/add_aoq_specification.php',
                             data: formData,
-                            success: function(response) {
-                                // Handle success response
-                                Swal.fire({
-                                    title: 'Submitted!',
-                                    text: 'Your AOQ specifications have been submitted successfully.',
-                                    icon: 'success',
-                                    showCancelButton: true,
-                                    confirmButtonColor: '#3085d6',
-                                    cancelButtonColor: '#d33',
-                                    confirmButtonText: 'Proceed to RESO',
-                                    cancelButtonText: 'Download'
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        // Redirect to RESO page
-                                        window.location.href = 'reso.php';
-                                    } else {
-                                        try {
-                                            const res = JSON.parse(response);
-                                            window.location.href = `src/process/download_pdf_aoq.php?aoq_id=${res.aoqId}`;
-                                        } catch (e) {
-                                            console.error('Error parsing response:', e);
-                                            Swal.fire('Error!', 'Failed to initiate download.', 'error');
-                                        }
-                                    }
-                                });
+                            success: handleSuccess,
+                            error: handleError
+                        });
 
-                                $('#aoq-form')[0].reset();
-
-                            },
-                            error: function(xhr, status, error) {
-                                console.error('AJAX error:', status, error);
-                                Swal.fire('Error!', 'There was an error processing your request.', 'error');
-                            }
+                        // Second AJAX request for add_aoq.php
+                        $.ajax({
+                            type: 'POST',
+                            url: 'src/process/add_aoq.php',
+                            data: formData,
+                            success: handleSuccess,
+                            error: handleError
                         });
                     }
                 });
+
+                // Success handler for both AJAX requests
+                function handleSuccess(response) {
+                    try {
+                        // Assuming both responses return the same aoqId
+                        const res = JSON.parse(response);
+
+                        // Show success message
+                        Swal.fire({
+                            title: 'Submitted!',
+                            text: 'Your AOQ specifications have been submitted successfully.',
+                            icon: 'success',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Proceed to RESO',
+                            cancelButtonText: 'Download'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Redirect to RESO page
+                                window.location.href = 'reso.php';
+                            } else {
+                                // Proceed with the download
+                                window.location.href = `src/process/download_pdf_aoq.php?aoq_id=${res.aoqId}`;
+                            }
+                        });
+
+                        // Reset form
+                        $('#aoq-form')[0].reset();
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                        Swal.fire('Error!', 'Failed to initiate download.', 'error');
+                    }
+                }
+
+                // Error handler for AJAX requests
+                function handleError(xhr, status, error) {
+                    console.error('AJAX error:', status, error);
+                    Swal.fire('Error!', 'There was an error processing your request.', 'error');
+                }
             });
+
         });
     </script>
 </body>

@@ -5,16 +5,32 @@ include '../config/database.php';  // Update with your actual DB connection file
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get RFQ data from the form
-    $projectTitle = $_POST['project_title'];
-    $prRequestNumber = $_POST['pr_request_number'];
-    $endUser = $_POST['end_user'];
-    $dateCreated = $_POST['date_created'];
-    $deadlineSubmission = $_POST['deadline_submission'];
-    $approvedBudget = $_POST['approved_budget'];
-    $procurementMode = $_POST['procurement_mode'];
+    $projectTitle = isset($_POST['project_title']) ? $_POST['project_title'] : '';
+    $prRequestNumber = isset($_POST['pr_request_number']) ? $_POST['pr_request_number'] : '';
+    $endUser = isset($_POST['end_user']) ? $_POST['end_user'] : '';
+    $dateCreated = isset($_POST['date_created']) ? $_POST['date_created'] : '';
+    $deadlineSubmission = isset($_POST['deadline_submission']) ? $_POST['deadline_submission'] : '';
+    $approvedBudget = isset($_POST['approved_budget']) ? $_POST['approved_budget'] : '';
+    $procurementMode = isset($_POST['procurement_mode']) ? $_POST['procurement_mode'] : '';
 
-    // Get the RFQ items (dynamically added rows from JavaScript)
-    $rfqItems = json_decode($_POST['rfq_items'], true);  // Decode the JSON string into an array
+    // Check if rfq_items is set and is a valid JSON string
+    if (isset($_POST['rfq_items'])) {
+        $rfqItems = json_decode($_POST['rfq_items'], true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Invalid RFQ items format.'
+            ]);
+            exit;
+        }
+    } else {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'RFQ items not provided.'
+        ]);
+        exit;
+    }
 
     // Begin transaction to handle multiple inserts
     $conn->begin_transaction();
@@ -25,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         if ($stmt = $conn->prepare($insertRfqQuery)) {
-            $stmt->bind_param("sssssss", $projectTitle, $prRequestNumber, $endUser, $dateCreated, $deadlineSubmission, $approvedBudget, $procurementMode);
+            $stmt->bind_param("sssssds", $projectTitle, $prRequestNumber, $endUser, $dateCreated, $deadlineSubmission, $approvedBudget, $procurementMode);
 
             if ($stmt->execute()) {
                 // Get the last inserted rfq_id
@@ -39,11 +55,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($stmt = $conn->prepare($insertRfqItemsQuery)) {
                     // Loop through the items and insert each one
                     foreach ($rfqItems as $item) {
-                        $stmt->bind_param("iisssdss", $rfqId, $item['quantity'], $item['unit'], $item['general_name'], $item['tech_spec'], $item['unit_cost'], $item['bidder_offer_spec'], $item['quoted_unit_price']);
-                        $stmt->execute();
+                        $quantity = isset($item['quantity']) ? $item['quantity'] : 0;
+                        $unit = isset($item['unit']) ? $item['unit'] : '';
+                        $generalName = isset($item['general_name']) ? $item['general_name'] : '';
+                        $techSpec = isset($item['tech_spec']) ? $item['tech_spec'] : '';
+                        $unitCost = isset($item['unit_cost']) ? $item['unit_cost'] : 0.0;
+                        $bidderOfferSpec = isset($item['bidder_offer_spec']) ? $item['bidder_offer_spec'] : '';
+                        $quotedUnitPrice = isset($item['quoted_unit_price']) ? $item['quoted_unit_price'] : 0.0;
+
+                        $stmt->bind_param("iisssdss", $rfqId, $quantity, $unit, $generalName, $techSpec, $unitCost, $bidderOfferSpec, $quotedUnitPrice);
+                        if (!$stmt->execute()) {
+                            throw new Exception("Failed to insert RFQ item: " . $conn->error);
+                        }
                     }
                 } else {
-                    throw new Exception('Failed to prepare statement for RFQ items.');
+                    throw new Exception('Failed to prepare statement for RFQ items: ' . $conn->error);
                 }
 
                 // Commit transaction if everything is successful
@@ -58,10 +84,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]
                 ]);
             } else {
-                throw new Exception('Failed to insert RFQ.');
+                throw new Exception('Failed to insert RFQ: ' . $conn->error);
             }
         } else {
-            throw new Exception('Failed to prepare statement for RFQ insertion.');
+            throw new Exception('Failed to prepare statement for RFQ insertion: ' . $conn->error);
         }
     } catch (Exception $e) {
         // Rollback transaction if something goes wrong

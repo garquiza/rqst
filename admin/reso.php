@@ -34,6 +34,17 @@ if ($titleResult) {
         $titles[$titleRow['page']] = $titleRow;
     }
 }
+
+$companyQuery = "SELECT company_name FROM company_details";
+$companyResult = mysqli_query($conn, $companyQuery);
+
+$suppliers = [];
+if ($companyResult) {
+    while ($row = mysqli_fetch_assoc($companyResult)) {
+        $suppliers[] = $row['company_name'];
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -90,7 +101,16 @@ if ($titleResult) {
                         </div>
                         <div class="mb-3">
                             <label for="supplier-name" class="form-label">Supplier Name</label>
-                            <input type="text" class="form-control" id="supplier-name" name="supplier_name" required>
+                            
+                            <select id="supplier-name" name="supplier_name" class="form-select">
+                                <option value="">-- Select Supplier Name --</option>
+                                <?php foreach ($suppliers as $supplier): ?>
+                                    <option value="<?php echo $supplier; ?>">
+                                        <?php echo $supplier; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+
                         </div>
                         <div class="mb-3">
                             <label for="description" class="form-label">Description of Goods/Services</label>

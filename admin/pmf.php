@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                 <!-- Used projects (disabled) -->
                                 <?php foreach ($usedProjects as $projectTitle): ?>
-                                    <option value="<?= htmlspecialchars($projectTitle) ?>" disabled><?= htmlspecialchars($projectTitle) ?> (Used)</option>
+                                    <option value="<?= htmlspecialchars($projectTitle) ?>" disabled><?= htmlspecialchars($projectTitle) ?> (Processed)</option>
                                 <?php endforeach; ?>
                             </select>
                         </div>

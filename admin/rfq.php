@@ -1,4 +1,3 @@
-
 <?php
 // Start session
 session_start();
@@ -14,16 +13,15 @@ $projectTitle = isset($_GET['project_title']) ? htmlspecialchars($_GET['project_
 
 // Include database connection
 require_once '../admin/src/config/pdo.php';
-
+require_once '../admin/src/config/database.php';
 // Fetch all approved projects from the database
 $projectQuery = $pdo->prepare("SELECT DISTINCT project_title FROM ppmp_list");
 $projectQuery->execute();
 $approvedProjects = $projectQuery->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch PRs for the project title from the database
-// Fetch PRs for the project title from the database
 $prQuery = $pdo->prepare("
-    SELECT pr.pr_number, end_users.sector
+    SELECT pr.pr_number, end_users.sector 
     FROM purchase_requests AS pr
     INNER JOIN end_users ON pr.end_user_id = end_users.id
     INNER JOIN ppmp_list ON pr.ppmp_id = ppmp_list.ppmp_id
@@ -35,8 +33,6 @@ $prQuery = $pdo->prepare("
 $prQuery->execute(['projectTitle' => $projectTitle]);
 $approvedPRs = $prQuery->fetchAll(PDO::FETCH_ASSOC);
 
-$current_page = 'rfq.php';
-
 // Fetch procurement titles
 $titleQuery = $pdo->prepare("SELECT * FROM procurement_titles");
 $titleQuery->execute();
@@ -46,28 +42,63 @@ while ($titleRow = $titleQuery->fetch(PDO::FETCH_ASSOC)) {
     $titles[$titleRow['page']] = $titleRow;
 }
 
+
 // Fetch PR numbers already in the RFQ table
 $rfqPRsQuery = $pdo->query("SELECT pr_request_number FROM rfq");
 $rfqPRs = $rfqPRsQuery->fetchAll(PDO::FETCH_COLUMN);
 
+// Handle AJAX request to fetch total_abc
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['project_title'])) {
+    $projectTitle = $_POST['project_title'];
 
-
-// Fetch total ABC for the project title from the database
-if (isset($_POST['project_title'])) {
-    $project_title = $_POST['project_title'];
-    $sql = "SELECT total_abc 
-            FROM pmaf 
-            WHERE project_title = ? 
-            LIMIT 1";
+    // Query to fetch total_abc from the pmaf table
+    $sql = "SELECT total_abc FROM pmaf WHERE project_title = ? LIMIT 1";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$project_title]);
-    $total_abc = $stmt->fetchColumn(); // Get total_abc directly
+    $stmt->execute([$projectTitle]);
 
-    echo json_encode([
-        'total_abc' => $total_abc ?: '0' // Return 0 if no value found
-    ]);
+    $totalAbc = $stmt->fetchColumn(); // Get total_abc value
+
+    echo json_encode(['total_abc' => $totalAbc ?: '0']); // Return 0 if no value found
+    exit();
 }
+
+// Fetch unique general names from the purchase_request_items table using PDO
+// Fetch all items from the items table
+$allItemsQuery = "SELECT DISTINCT item_name FROM items";
+$allItemsStmt = $pdo->query($allItemsQuery);
+$allItems = $allItemsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Fetch items linked to the selected PR Number
+$selectedPrNumber = $_POST['pr_request_number'] ?? null;
+
+if ($selectedPrNumber) {
+    $linkedItemsQuery = "SELECT DISTINCT item_name FROM purchase_request_items WHERE pr_number = :pr_number";
+    $linkedItemsStmt = $pdo->prepare($linkedItemsQuery);
+    $linkedItemsStmt->bindParam(':pr_number', $selectedPrNumber, PDO::PARAM_STR);
+    $linkedItemsStmt->execute();
+    $linkedItems = $linkedItemsStmt->fetchAll(PDO::FETCH_COLUMN);
+} else {
+    $linkedItems = [];
+}
+
+$sql = "SELECT mode_of_procurement FROM ppmp_form";
+$result = $conn->query($sql);
+
+if (isset($_POST['mode_of_procurement'])) {
+    $selected_modes = $_POST['mode_of_procurement'];
+    
+    if (in_array('all', $selected_modes)) {
+        echo "All procurement modes selected.";
+    } else {
+        foreach ($selected_modes as $mode) {
+            echo $mode . "<br>";
+        }
+    }
+}
+
+
 ?>
+
 
 
 <!DOCTYPE html>
@@ -133,7 +164,7 @@ if (isset($_POST['project_title'])) {
                                             data-enduser="<?php echo $pr['sector']; ?>"
                                             <?php echo in_array($pr['pr_number'], $rfqPRs) ? 'disabled' : ''; ?>>
                                             <?php echo $pr['pr_number']; ?> 
-                                            <?php echo in_array($pr['pr_number'], $rfqPRs) ? '(Already in RFQ)' : ''; ?>
+                                            <?php echo in_array($pr['pr_number'], $rfqPRs) ? '(Already Processed)' : ''; ?>
                                         </option>
                                     <?php endforeach; ?>
 
@@ -178,11 +209,39 @@ if (isset($_POST['project_title'])) {
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="total-abc" class="form-label">Approved Budget for the Contract (ABC)</label>
-                                <input type="number" id="total-abc" name="total_abc" class="form-control" placeholder="Auto-filled Total ABC" readonly>
+                                <input type="number" id="total-abc" name="approved_budget" class="form-control" placeholder="Auto-filled Total ABC" readonly>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="procurementMode" class="form-label">Mode of Procurement</label>
-                                <input type="text" id="procurementMode" name="procurement_mode" class="form-control" placeholder="Enter Procurement Mode">
+                                <select id="procurementMode" name="mode_of_procurement" class="form-select">
+                                    <option value="">-- Select Mode of Procurement --</option>
+                                    <option value="Competitive Bidding">Competitive Bidding</option>
+                                    <option value="Limited Source Bidding">Limited Source Bidding</option>
+                                    <option value="Direct Contracting">Direct Contracting</option>
+                                    <option value="Repeat Order">Repeat Order</option>
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="NP-53.1 Two Failed Biddings">NP-53.1 Two Failed Biddings</option>
+                                    <option value="NP-53.2 Emergency Cases">NP-53.2 Emergency Cases</option>
+                                    <option value="Emergency Procurement under the Bayanihan Act">Emergency Procurement under the Bayanihan Act</option>
+                                    <option value="NP-53.3 Take-Over of Contracts">NP-53.3 Take-Over of Contracts</option>
+                                    <option value="NP-53.4 Adjacent or Contiguous">NP-53.4 Adjacent or Contiguous</option>
+                                    <option value="NP-53.5 Agency-to-Agency">NP-53.5 Agency-to-Agency</option>
+                                    <option value="NP-53.6 Scientific, Scholarly, Artistic Work, Exclusive Technology and Media Services">NP-53.6 Scientific, Scholarly, Artistic Work, Exclusive Technology and Media Services</option>
+                                    <option value="NP-53.7 Highly Technical Consultants">NP-53.7 Highly Technical Consultants</option>
+                                    <option value="NP-53.8 Defense Cooperation Agreement">NP-53.8 Defense Cooperation Agreement</option>
+                                    <option value="NP-53.9 - Small Value Procurement">NP-53.9 - Small Value Procurement</option>
+                                    <option value="NP-53.10 Lease of Real Property and Venue">NP-53.10 Lease of Real Property and Venue</option>
+                                    <option value="NP-53.11 NGO Participation">NP-53.11 NGO Participation</option>
+                                    <option value="NP-53.12 Community Participation">NP-53.12 Community Participation</option>
+                                    <option value="NP-53.13 UN Agencies, Int'l Organizations or Intentional Financing Institutions">NP-53.13 UN Agencies, Int'l Organizations or Intentional Financing Institutions</option>
+                                    <option value="NP-53.14 Direct Retail Purchase of Petroleum Fuel, Oil and Lubricant (POL) Products and Airline Tickets">NP-53.14 Direct Retail Purchase of Petroleum Fuel, Oil and Lubricant (POL) Products and Airline Tickets</option>
+                                    <option value="Others - Foreign-funded procurements">Others - Foreign-funded procurements</option>
+
+                                </select>
+
+
+
+
                             </div>
                         </div>
                     </div>
@@ -238,16 +297,30 @@ if (isset($_POST['project_title'])) {
                 <div class="modal-body">
                     <form id="addRowForm">
                         <div class="mb-3">
+                            <label for="generalName" class="form-label">General Name of the Item</label>
+                            <select name="general_name" id="generalName" class="form-control" required>
+                                <option value="">-- Select General Name --</option>
+
+                                <!-- Enabled items (linked to the selected PR) -->
+                                <?php foreach ($linkedItems as $item): ?>
+                                    <option value="<?= htmlspecialchars($item) ?>"><?= htmlspecialchars($item) ?></option>
+                                <?php endforeach; ?>
+
+                                <!-- Disabled items (not linked to the selected PR) -->
+                                <?php foreach ($allItems as $item): ?>
+                                    <?php if (!in_array($item, $linkedItems)): ?>
+                                        <option value="<?= htmlspecialchars($item) ?>" disabled><?= htmlspecialchars($item) ?> (In other Purchase Request)</option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label for="quantity" class="form-label">Quantity</label>
                             <input type="number" id="quantity" name="quantity" class="form-control" placeholder="Enter Quantity" required>
                         </div>
                         <div class="mb-3">
                             <label for="unit" class="form-label">Unit</label>
                             <input type="text" id="unit" name="unit" class="form-control" placeholder="Enter Unit" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="generalName" class="form-label">General Name of the Item</label>
-                            <input type="text" id="generalName" name="general_name" class="form-control" placeholder="Enter General Name" required>
                         </div>
                         <div class="mb-3">
                             <label for="techSpec" class="form-label">Required Technical Specification</label>
@@ -274,37 +347,75 @@ if (isset($_POST['project_title'])) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check if the project title is already set in the form
+            const projectTitle = document.getElementById('projectTitle').value;
+
+            // If the project title is already selected, fetch the total ABC
+            if (projectTitle) {
+                fetchTotalAbc(projectTitle);
+            }
+
+            // Handle dynamic project title change
+            document.getElementById('projectTitle').addEventListener('change', function() {
+                const projectTitle = this.value;
+
+                if (projectTitle) {
+                    // Fetch total_abc when the project title is changed
+                    fetchTotalAbc(projectTitle);
+                } else {
+                    document.getElementById('total-abc').value = ''; // Clear the field if no project selected
+                }
+            });
+        });
+
+        // Function to fetch Total ABC
+        function fetchTotalAbc(projectTitle) {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'rfq.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    const totalAbc = response.total_abc || '0'; // Fallback to '0' if no total_abc is found
+                    document.getElementById('total-abc').value = totalAbc; // Populate the Total ABC field
+                }
+            };
+
+            xhr.send('project_title=' + encodeURIComponent(projectTitle));
+        }
+
         // Handle dynamic project title change
         document.getElementById('projectTitle').addEventListener('change', function() {
-            const selectedProject = this.value;
-            if (selectedProject) {
-                window.location.href = `?project_title=${encodeURIComponent(selectedProject)}`;
+            const projectTitle = this.value;
+
+            if (projectTitle) {
+                // AJAX request to fetch total_abc
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'rfq.php', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        const totalAbc = response.total_abc || '0'; // Fallback to '0'
+                        document.getElementById('total-abc').value = totalAbc; // Populate the ABC field
+                    }
+                };
+
+                xhr.send('project_title=' + encodeURIComponent(projectTitle));
+            } else {
+                document.getElementById('total-abc').value = ''; // Clear the field if no project selected
             }
         });
 
-
         document.getElementById('prRequestNumber').addEventListener('change', function () {
             var selectedOption = this.options[this.selectedIndex];
-            var projectTitle = selectedOption.getAttribute('data-projecttitle'); // Fetch project title associated with PR
-
-            // AJAX request to fetch total_abc based on projectTitle
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'pmf.php', true); // Make sure this path is correct
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-            
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    var response = JSON.parse(xhr.responseText);
-                    var totalAbc = response.total_abc || '0'; // Use the fetched total_abc or fallback to '0'
-                    document.getElementById('total-abc').value = totalAbc; // Update the total_abc field
-                }
-            };
-            
-            xhr.send('project_title=' + encodeURIComponent(projectTitle));
+            var endUserName = selectedOption.getAttribute('data-enduser');
+            document.getElementById('endUser').value = endUserName ? endUserName : '';
         });
-
-
-
 
     </script>
     <script>
@@ -317,8 +428,20 @@ if (isset($_POST['project_title'])) {
 
         let rowCount = 0;
 
+        // Function to reindex rows after adding/removing rows
+        function updateRowIndexes() {
+            const rows = document.querySelectorAll('#processTableBody tr');
+            rowCount = 0; // Reset row count
+
+            rows.forEach((row, index) => {
+                rowCount++;
+                row.querySelector('td:first-child').innerText = rowCount; // Update the row number
+            });
+        }
+
         
 
+        // Add row
         document.getElementById('addRowForm').addEventListener('submit', function(event) {
             event.preventDefault();
 
@@ -329,23 +452,23 @@ if (isset($_POST['project_title'])) {
             const unitCost = document.getElementById('unitCost').value;
             const bidOfferSpec = document.getElementById('bidOfferSpec').value;
 
-            rowCount++;
+            rowCount++; // Increment row count for the new row
 
             const newRow = `
-        <tr id="row-${rowCount}">
-            <td>${rowCount}</td>
-            <td>${quantity}</td>
-            <td>${unit}</td>
-            <td>${generalName}</td>
-            <td>${techSpec}</td>
-            <td>₱${unitCost}</td>
-            <td>${bidOfferSpec}</td>
-            <td>₱${unitCost}</td>
-            <td>
-                <button class="btn btn-danger btn-sm remove-row" data-row="row-${rowCount}">Remove</button>
-            </td>
-        </tr>
-    `;
+                <tr id="row-${rowCount}">
+                    <td>${rowCount}</td>
+                    <td>${quantity}</td>
+                    <td>${unit}</td>
+                    <td>${generalName}</td>
+                    <td>${techSpec}</td>
+                    <td>₱${unitCost}</td>
+                    <td>${bidOfferSpec}</td>
+                    <td>₱${unitCost}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm remove-row" data-row="row-${rowCount}">Remove</button>
+                    </td>
+                </tr>
+            `;
 
             document.getElementById('processTableBody').insertAdjacentHTML('beforeend', newRow);
 
@@ -363,6 +486,29 @@ if (isset($_POST['project_title'])) {
 
             // Clear the form
             this.reset();
+
+            // Re-index rows after adding a new one
+            updateRowIndexes();
+        });
+
+        // Event listener for removing rows
+        document.getElementById('processTableBody').addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-row')) {
+                const rowId = event.target.getAttribute('data-row');
+                const row = document.getElementById(rowId);
+
+                if (row) {
+                    row.remove();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Row Removed',
+                        text: 'The selected row has been successfully removed!',
+                    });
+
+                    // Re-index rows after removing one
+                    updateRowIndexes();
+                }
+            }
         });
 
         // Event listener for removing rows
@@ -464,3 +610,4 @@ if (isset($_POST['project_title'])) {
 </body>
 
 </html>
+
