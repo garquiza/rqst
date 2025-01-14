@@ -13,16 +13,101 @@ $user_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'User';
 // Include database connection
 include('src/config/database.php');
 
-$ppmpQuery = "
-    SELECT ppmp_list.ppmp_id, ppmp_list.project_title, ppmp_form.general_description
-    FROM ppmp_list
-    LEFT JOIN ppmp_form ON ppmp_list.ppmp_id = ppmp_form.ppmp_id
-    WHERE ppmp_list.status = 'approved'
-";
+// Query to fetch inventory items
+$query = "SELECT inventory_id, item_name, item_description, unit_cost FROM inventory";
+$result = mysqli_query($conn, $query);
+
+// Fetch PPMP entries for the dropdown
+$ppmpQuery = "SELECT ppmp_id, project_title FROM ppmp_list WHERE status = 'approved'";
+
+// Execute the query to fetch approved PPMP entries
 $ppmpResult = mysqli_query($conn, $ppmpQuery);
 
-?>
+// Process the form when submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (isset($_POST['ppmp_id']) && !empty($_POST['ppmp_id'])) {
+        $selected_ppmp_id = $_POST['ppmp_id']; // Get the selected ppmp_id
 
+        // Log the selected PPMP ID for debugging
+        error_log("Selected PPMP ID: " . $selected_ppmp_id);
+
+        // Query to fetch items from ppmp_form for the selected PPMP ID
+        $ppmpFormItemsQuery = "
+            SELECT general_description, quantity_size, unit_cost
+            FROM ppmp_form
+            WHERE ppmp_id = $selected_ppmp_id
+        ";
+
+        // Log the query for debugging
+        error_log("Executing PPMP Form Items query: " . $ppmpFormItemsQuery);
+
+        // Execute the query to fetch ppmp_form items
+        $ppmpFormItemsResult = mysqli_query($conn, $ppmpFormItemsQuery);
+
+        // Check if the query executed successfully
+        if ($ppmpFormItemsResult) {
+            $ppmpFormItems = [];
+
+            // Fetch the results and store them in the array
+            while ($row = mysqli_fetch_assoc($ppmpFormItemsResult)) {
+                $ppmpFormItems[] = $row;
+            }
+
+            // Log the fetched items for debugging
+            error_log("Fetched PPMP Form items: " . json_encode($ppmpFormItems));
+
+            // Check if any results were returned
+            if (empty($ppmpFormItems)) {
+                error_log("No items found for PPMP ID: " . $selected_ppmp_id);
+                echo "No approved items found.";
+            } else {
+                // Output the fetched items (you can use this for display)
+                echo "<pre>";
+                print_r($ppmpFormItems);
+                echo "</pre>";
+            }
+        } else {
+            // Log any errors that occur during the execution of the query
+            error_log("Error executing PPMP Form Items query: " . mysqli_error($conn));
+            echo "Error executing query: " . mysqli_error($conn);
+        }
+    } else {
+        error_log("No PPMP ID selected.");
+        echo "Please select a PPMP.";
+    }
+}
+// Process the form when submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Capture form data
+    $ppmp_id = isset($_POST['ppmp_id']) ? $_POST['ppmp_id'] : '';
+    $department = isset($_POST['department']) ? $_POST['department'] : '';
+    $section = isset($_POST['section']) ? $_POST['section'] : '';
+    $general_item = isset($_POST['general_item']) ? $_POST['general_item'] : '';
+    $quantity = isset($_POST['quantity']) ? $_POST['quantity'] : 0;
+    $unit_cost = isset($_POST['unit_cost']) ? $_POST['unit_cost'] : 0;
+    $purpose = isset($_POST['purpose']) ? $_POST['purpose'] : '';
+
+    // Calculate the total cost
+    $total_cost = $quantity * $unit_cost;
+
+    // Prepare the SQL query to insert the data
+    $query = "INSERT INTO purchase_request_items (pr_id, department, section, general_item, quantity, unit_cost, total_cost, purpose)
+              VALUES ('$ppmp_id', '$department', '$section', '$general_item', '$quantity', '$unit_cost', '$total_cost', '$purpose')";
+
+    // Execute the query
+    if (mysqli_query($conn, $query)) {
+        // On success, redirect or show a success message
+        echo "<script>Swal.fire('Success!', 'Purchase Request Created Successfully!', 'success');</script>";
+        // Optionally redirect to another page, like the list of purchase requests
+        header("Location: purchase_requests.php"); // Modify this based on your page structure
+        exit();
+    } else {
+        // On failure, display an error message
+        echo "<script>Swal.fire('Error!', 'Failed to create Purchase Request!', 'error');</script>";
+    }
+}
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -34,6 +119,7 @@ $ppmpResult = mysqli_query($conn, $ppmpQuery);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="src/css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         .content {
             margin-left: 250px;
@@ -59,187 +145,212 @@ $ppmpResult = mysqli_query($conn, $ppmpQuery);
     <div class="content animate__animated animate__fadeIn">
         <h1 class="mb-4">Create Purchase Request</h1>
         <div class="form-section">
-            <form id="purchaseRequestForm" method="post">
-                <div class="row g-3 mt-3">
-                    <!-- Select Approved PPMP -->
-                    <div class="col-md-12 mb-4">
-                        <label for="ppmp_id" class="form-label">Select Approved PPMP:</label>
-                        <select class="form-select" id="ppmp_id" name="ppmp_id" required>
-                            <option value="">Select Approved PPMP</option>
-                            <?php while ($ppmpRow = mysqli_fetch_assoc($ppmpResult)): ?>
-                                <option value="<?php echo $ppmpRow['ppmp_id']; ?>">
-                                    <?php echo htmlspecialchars($ppmpRow['project_title']); ?>
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
-                    </div>
-                </div>
+            <form id="ppmpForm">
+                <!-- Select Approved PPMP -->
+                <label for="ppmp_id" class="form-label">Select Approved PPMP:</label>
+                <select class="form-select" id="ppmp_id" name="ppmp_id" required>
+                    <option value="">Select Approved PPMP</option>
+                    <?php
+                    // Check if the query executed successfully
+                    if ($ppmpResult) {
+                        // Fetch and populate the dropdown with approved PPMP entries
+                        while ($ppmpRow = mysqli_fetch_assoc($ppmpResult)): ?>
+                            <option value="<?php echo $ppmpRow['ppmp_id']; ?>">
+                                <?php echo htmlspecialchars($ppmpRow['project_title']); ?>
+                            </option>
+                        <?php endwhile; ?>
+                    <?php } else {
+                        echo "<option value=''>No approved PPMPs found</option>";
+                    } ?>
+                </select>
 
-                <div class="row g-3 mt-3">
-                    <!-- Select Item (general_description) -->
-                    <div class="col-md-12">
-                        <label for="inventory_item" class="form-label">Select Item:</label>
-                        <select class="form-select" id="inventory_item" name="inventory_item" required>
-                            <option value="">Select Item</option>
-                            <?php
-                            // Reset the pointer of the result set to fetch again
-                            mysqli_data_seek($ppmpResult, 0); // Reset to the beginning
-
-                            while ($ppmpRow = mysqli_fetch_assoc($ppmpResult)):
-                                // Check if general_description is valid
-                                $descriptions = json_decode($ppmpRow['general_description']);
-                                if (is_array($descriptions)):
-                                    foreach ($descriptions as $description):
-                            ?>
-                                        <option value="<?php echo $ppmpRow['ppmp_id']; ?>" data-description="<?php echo htmlspecialchars($description); ?>">
-                                            <?php echo htmlspecialchars($description); ?>
-                                        </option>
-                            <?php
-                                    endforeach;
-                                endif;
-                            endwhile;
-                            ?>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="row g-3 mt-3">
-                    <!-- Quantity -->
-                    <div class="col-md-4">
-                        <label for="quantity" class="form-label">Quantity:</label>
-                        <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
-                    </div>
-                    <!-- Unit Cost (from selected item) -->
-                    <div class="col-md-4">
-                        <label for="unit_cost" class="form-label">Unit Cost:</label>
-                        <input type="number" class="form-control" id="unit_cost" name="unit_cost" min="0" step="0.01" readonly>
-                    </div>
-                    <!-- Total Cost -->
-                    <div class="col-md-4">
-                        <label for="total_cost" class="form-label">Total Cost:</label>
-                        <input type="number" class="form-control" id="total_cost" name="total_cost" readonly>
-                    </div>
-                </div>
-
-                <div class="row g-3 mt-4">
-                    <!-- Purpose -->
-                    <div class="col-md-12">
-                        <label for="purpose" class="form-label">Purpose:</label>
-                        <input type="text" class="form-control" id="purpose" name="purpose" required>
-                    </div>
-                </div>
-
-                <div class="row g-3 mt-4">
-                    <div class="col-md-12 d-flex justify-content-end">
-                        <button type="button" class="btn btn-primary me-2" id="submitBtn">Submit</button>
-                        <a href="pr.php" class="btn btn-secondary">Cancel</a>
-                    </div>
-                </div>
             </form>
+
+            <div class="row g-3">
+                <!-- Department -->
+                <div class="col-md-6">
+                    <label for="department" class="form-label">Department:</label>
+                    <input type="text" class="form-control" id="department" name="department" required>
+                </div>
+                <!-- Section -->
+                <div class="col-md-6">
+                    <label for="section" class="form-label">Section:</label>
+                    <input type="text" class="form-control" id="section" name="section" required>
+                </div>
+            </div>
+            <div class="row g-3 mt-3">
+                <!-- Select Item Dropdown -->
+                <div class="col-md-12">
+                    <label class="form-label">Select Item:</label>
+                    <select class="form-select" id="general_item" name="general_item" required>
+                        <option value="">Select Item</option>
+                        <!-- Dropdown options will be dynamically populated -->
+                    </select>
+                </div>
+            </div>
+
+
+            <!-- Quantity and Unit Cost inputs follow -->
+            <div class="row g-3 mt-3">
+                <!-- Quantity -->
+                <div class="col-md-4">
+                    <label for="quantity" class="form-label">Quantity:</label>
+                    <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="unit_cost" class="form-label">Unit Cost:</label>
+                    <input type="number" class="form-control" id="unit_cost" name="unit_cost" min="0" step="0.01" readonly>
+                </div>
+
+            </div>
+
+
+            <!-- Total Cost -->
+            <div class="col-md-4">
+                <label for="total_cost" class="form-label">Total Cost:</label>
+                <input type="number" class="form-control" id="total_cost" name="total_cost" readonly>
+            </div>
+        </div>
+
+
+        <div class="row g-3 mt-4">
+            <!-- Purpose -->
+            <div class="col-md-12">
+                <label for="purpose" class="form-label">Purpose:</label>
+                <input type="text" class="form-control" id="purpose" name="purpose" required>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="row g-3 mt-4">
+            <div class="col-md-12 d-flex justify-content-end">
+                <button type="button" class="btn btn-primary me-2" id="submitBtn">Submit</button>
+                <a href="pr.php" class="btn btn-secondary">Cancel</a>
+            </div>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
     <script>
-        // Automatically calculate Total Cost based on Quantity and Unit Cost
-        document.getElementById('quantity').addEventListener('input', calculateTotal);
-        document.getElementById('inventory_item').addEventListener('change', updateUnitCost);
+        // Wait for the page to load
+        document.addEventListener("DOMContentLoaded", function() {
 
-        function calculateTotal() {
-            const quantity = parseFloat(document.getElementById('quantity').value) || 0;
-            const unitCost = parseFloat(document.getElementById('unit_cost').value) || 0;
-            document.getElementById('total_cost').value = (quantity * unitCost).toFixed(2);
-        }
+            // Event listener for when PPMP ID is changed
+            document.getElementById('ppmp_id').addEventListener('change', function() {
+                var ppmp_id = this.value; // Get the selected PPMP ID
 
-        function updateUnitCost() {
-            const selectedItem = document.getElementById('inventory_item').selectedOptions[0];
-            const unitCost = selectedItem.getAttribute('data-unit-cost');
-            document.getElementById('unit_cost').value = unitCost;
-            calculateTotal(); // Recalculate total cost based on new unit cost
-        }
+                if (ppmp_id) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', 'process_ppmp.php', true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4 && xhr.status === 200) {
+                            var response = JSON.parse(xhr.responseText); // Parse the JSON response
 
-        document.getElementById('submitBtn').addEventListener('click', function() {
-            // Show SweetAlert confirmation dialog
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "Do you want to submit this purchase request?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes, Submit',
-                cancelButtonText: 'No, Cancel',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Get the form data
-                    const form = document.getElementById('purchaseRequestForm');
-                    const formData = new FormData(form);
+                            var dropdown = document.getElementById('general_item');
+                            dropdown.innerHTML = '<option value="">Select Item</option>'; // Clear existing options
 
-                    // Submit the form via AJAX to add_pr.php
-                    fetch('src/process/add_pr.php', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json()) // Assuming the response is JSON
-                        .then(data => {
-                            // Check the response status
-                            if (data.status === 'success') {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Success!',
-                                    text: data.message,
-                                    showConfirmButton: false,
-                                    timer: 1000
-                                }).then(() => {
-                                    window.location.href = 'pr.php';
+                            if (response.success) {
+                                console.log('Selected PPMP: ' + response.project_title);
+
+                                response.items.forEach(function(item) {
+                                    var option = document.createElement('option');
+                                    option.value = JSON.stringify(item); // Store item as JSON string in the value
+                                    option.textContent = item.general_description; // Use general_description as display text
+                                    dropdown.appendChild(option);
                                 });
                             } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Failed!',
-                                    text: data.message
-                                });
+                                var option = document.createElement('option');
+                                option.value = '';
+                                option.textContent = response.message;
+                                dropdown.appendChild(option);
                             }
-                        })
-                        .catch(error => {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: 'Something went wrong. Please try again later.'
-                            });
-                        });
+                        }
+                    };
+                    xhr.send('ppmp_id=' + ppmp_id); // Send PPMP ID to the backend
+                } else {
+                    document.getElementById('general_item').innerHTML = '<option value="">Select Item</option>';
                 }
             });
+
+            // Event listener for when the general item is selected
+            document.getElementById('general_item').addEventListener('change', function() {
+                var selectedItem = this.value;
+
+                if (selectedItem) {
+                    var itemData = JSON.parse(selectedItem); // Parse JSON string from value
+
+                    // Extract quantity_size and unit_cost for the selected general description
+                    var quantitySize = itemData.quantity_size;
+                    var unitCost = itemData.unit_cost;
+
+                    // If quantity_size and unit_cost are arrays, use only the first item
+                    if (Array.isArray(quantitySize)) {
+                        quantitySize = quantitySize[0];
+                    }
+                    if (Array.isArray(unitCost)) {
+                        unitCost = unitCost[0];
+                    }
+
+                    // Populate quantity and unit cost
+                    document.getElementById('quantity').value = quantitySize || ''; // Populate quantity
+                    document.getElementById('unit_cost').value = unitCost || ''; // Populate unit cost
+
+                    // Calculate total cost (quantity * unit_cost)
+                    var totalCost = parseFloat(quantitySize) * parseFloat(unitCost);
+                    document.getElementById('total_cost').value = isNaN(totalCost) ? '' : totalCost.toFixed(2); // Display total cost
+                } else {
+                    document.getElementById('quantity').value = '';
+                    document.getElementById('unit_cost').value = '';
+                    document.getElementById('total_cost').value = ''; // Clear total cost if no item is selected
+                }
+            });
+
         });
-        document.getElementById('ppmp_id').addEventListener('change', function() {
-            const ppmpId = this.value;
+        document.getElementById('submitBtn').addEventListener('click', function() {
+            var ppmp_id = document.getElementById('ppmp_id').value;
+            var department = document.getElementById('department').value;
+            var section = document.getElementById('section').value;
+            var general_item = document.getElementById('general_item').value; // This will contain the JSON string
+            var quantity = document.getElementById('quantity').value;
+            var unit_cost = document.getElementById('unit_cost').value;
+            var purpose = document.getElementById('purpose').value;
 
-            // Clear previous options
-            const inventoryItemSelect = document.getElementById('inventory_item');
-            inventoryItemSelect.innerHTML = '<option value="">Select Item</option>';
-
-            if (ppmpId) {
-                // Fetch items for the selected PPMP ID using AJAX
-                fetch('get_inventory_items.php?ppmp_id=' + ppmpId)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.items && data.items.length > 0) {
-                            // Loop through the descriptions and add each one as a new option
-                            data.items.forEach(item => {
-                                if (item.general_description && Array.isArray(item.general_description)) {
-                                    item.general_description.forEach(description => {
-                                        const option = document.createElement('option');
-                                        option.value = description; // Use the description text as the value
-                                        option.textContent = description; // Display the description text
-                                        inventoryItemSelect.appendChild(option);
-                                    });
-                                }
-                            });
-                        }
-                    })
-                    .catch(error => console.error('Error fetching inventory items:', error));
+            // Check if an item is selected
+            if (general_item) {
+                // Parse the general_item string to get the general_description
+                var item = JSON.parse(general_item);
+                general_item = item.general_description; // Only extract general_description
+            } else {
+                console.error('No item selected');
+                return; // Exit if no item is selected
             }
+
+            // Create a form data object to submit the data
+            var formData = new FormData();
+            formData.append('ppmp_id', ppmp_id);
+            formData.append('department', department);
+            formData.append('section', section);
+            formData.append('general_item', general_item); // Pass only general_description
+            formData.append('quantity', quantity);
+            formData.append('unit_cost', unit_cost);
+            formData.append('purpose', purpose);
+
+            // Send the data to the PHP script via AJAX
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/rqst/end-user/src/process/add_pr.php', true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        // Handle success, you can show a success message or redirect
+                        Swal.fire('Success!', 'Purchase Request Created Successfully!', 'success');
+                        window.location.href = 'pr.php'; // Redirect after success
+                    } else {
+                        Swal.fire('Error!', response.message, 'error');
+                    }
+                }
+            };
+            xhr.send(formData); // Send the data
         });
     </script>
-</body>
-
-</html>
