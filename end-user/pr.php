@@ -146,49 +146,49 @@ if ($titleResult) {
 
                 <!-- Status and Year Filter Dropdown -->
                 <form method="get" class="d-flex mb-2">
-                                    <select name="year" class="form-select me-2" onchange="this.form.submit()">
-                    <option value="">All Years</option>
-                    <?php
-                    // Get the current year
-                    $current_year = date('Y');
+                    <select name="year" class="form-select me-2" onchange="this.form.submit()">
+                        <option value="">All Years</option>
+                        <?php
+                        // Get the current year
+                        $current_year = date('Y');
 
-                    // Fetch all available years from the database
-                    $years_query = "SELECT DISTINCT YEAR(submitted_date) as year FROM purchase_requests ORDER BY year DESC";
-                    $years_result = mysqli_query($conn, $years_query);
+                        // Fetch all available years from the database
+                        $years_query = "SELECT DISTINCT YEAR(submitted_date) as year FROM purchase_requests ORDER BY year DESC";
+                        $years_result = mysqli_query($conn, $years_query);
 
-                    // Populate the year dropdown
-                    while ($row = mysqli_fetch_assoc($years_result)):
-                    ?>
-                        <option value="<?php echo $row['year']; ?>" <?php if (isset($_GET['year']) && $_GET['year'] == $row['year']) echo 'selected'; ?>>
-                            <?php echo $row['year']; ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-
-                <!-- Status Filter Dropdown -->
-                <form method="get" class="d-flex mb-2">
-                    <select name="status" class="form-select me-2" onchange="this.form.submit()">
-                        <option value="">All Statuses</option>
-                        <option value="approved" <?php if ($status_filter == 'approved') echo 'selected'; ?>>Approved</option>
-                        <option value="rejected" <?php if ($status_filter == 'rejected') echo 'selected'; ?>>Rejected</option>
-                        <option value="pending" <?php if ($status_filter == 'pending') echo 'selected'; ?>>Pending</option>
+                        // Populate the year dropdown
+                        while ($row = mysqli_fetch_assoc($years_result)):
+                        ?>
+                            <option value="<?php echo $row['year']; ?>" <?php if (isset($_GET['year']) && $_GET['year'] == $row['year']) echo 'selected'; ?>>
+                                <?php echo $row['year']; ?>
+                            </option>
+                        <?php endwhile; ?>
                     </select>
-                    <button type="submit" class="btn btn-outline-primary">Filter</button>
-                </form>
 
-                <div>
-                    <?php if ($ppmp_count > 0): ?>
-                        <!-- Enabled Add PR Button -->
-                        <a href="create_pr.php" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Add Purchase Request
-                        </a>
-                    <?php else: ?>
-                        <!-- Disabled Add PR Button -->
-                        <button class="btn btn-primary" disabled>
-                            <i class="fas fa-plus"></i> Wait for PPMP Approval.
-                        </button>
-                    <?php endif; ?>
-                </div>
+                    <!-- Status Filter Dropdown -->
+                    <form method="get" class="d-flex mb-2">
+                        <select name="status" class="form-select me-2" onchange="this.form.submit()">
+                            <option value="">All Statuses</option>
+                            <option value="approved" <?php if ($status_filter == 'approved') echo 'selected'; ?>>Approved</option>
+                            <option value="rejected" <?php if ($status_filter == 'rejected') echo 'selected'; ?>>Rejected</option>
+                            <option value="pending" <?php if ($status_filter == 'pending') echo 'selected'; ?>>Pending</option>
+                        </select>
+                        <!-- <button type="submit" class="btn btn-outline-primary">Filter</button> -->
+                    </form>
+
+                    <div>
+                        <?php if ($ppmp_count > 0): ?>
+                            <!-- Enabled Add PR Button -->
+                            <a href="create_pr.php" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Purchase Request
+                            </a>
+                        <?php else: ?>
+                            <!-- Disabled Add PR Button -->
+                            <button class="btn btn-primary" disabled>
+                                <i class="fas fa-plus"></i> Wait for PPMP Approval.
+                            </button>
+                        <?php endif; ?>
+                    </div>
             </div>
 
             <!-- Purchase Request Table -->
@@ -244,19 +244,9 @@ if ($titleResult) {
                                     <a href="download_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-primary btn-sm" title="Download PR">
                                         <i class="fas fa-download"></i>
                                     </a>
-
                                     <a href="update_pr.php?pr_number=<?php echo $row['pr_number']; ?>" class="btn btn-outline-primary btn-sm" title="Update PR">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button class="btn btn-outline-danger btn-sm" title="Delete PR" onclick="confirmDelete('<?php echo $row['pr_number']; ?>')">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                    <button class="btn btn-outline-success btn-sm" title="Approve PR" onclick="changeStatus('<?php echo $row['pr_number']; ?>', 'approve')">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button class="btn btn-outline-danger btn-sm" title="Reject PR" onclick="changeStatus('<?php echo $row['pr_number']; ?>', 'reject')">
-                                        <i class="fas fa-times"></i>
-                                    </button>
                                 </td>
                             </tr>
                         <?php endwhile; ?>
@@ -291,86 +281,17 @@ if ($titleResult) {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-    function confirmDelete(prNumber) {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "This action will delete the purchase request permanently.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Perform AJAX call to delete the PR
-                $.ajax({
-                    url: 'src/process/delete_pr.php',
-                    type: 'POST',
-                    data: { pr_number: prNumber },
-                    success: function(response) {
-                        Swal.fire(
-                            'Deleted!',
-                            'The purchase request has been deleted.',
-                            'success'
-                        ).then(() => location.reload());
-                    },
-                    error: function() {
-                        Swal.fire('Error!', 'An error occurred while deleting the PR.', 'error');
-                    }
-                });
-            }
-        });
-    }
+        // Fetch the value of updates_enabled from PHP
+        const updatesEnabled = <?php echo $updatesEnabled; ?>;
 
-     // Function to change the process status
-function changeStatus(pr_number, action) {
-    Swal.fire({
-        title: `Are you sure you want to ${action} this PR?`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: `Yes, ${action}!`,
-        cancelButtonText: 'Cancel'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Send request to the server to update the status
-            fetch('src/process/update_process_status.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ pr_number, action })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: `${action}d!`,
-                        text: `The purchase request has been ${action}d.`,
-                        icon: 'success'
-                    }).then(() => location.reload()); // Reload to update the table
-                } else {
-                    Swal.fire('Error!', 'There was an issue updating the status.', 'error');
-                }
-            })
-            .catch(error => {
-                Swal.fire('Error!', 'There was an error with the request.', 'error');
+        // Disable "Edit" buttons if updates_enabled is 0
+        if (updatesEnabled === 0) {
+            const editButtons = document.querySelectorAll('.edit-btn');
+            editButtons.forEach(button => {
+                button.classList.add('disabled');
+                button.setAttribute('disabled', 'true');
             });
         }
-    });
-}
-
-// Fetch the value of updates_enabled from PHP
-const updatesEnabled = <?php echo $updatesEnabled; ?>;
-
-// Disable "Edit" buttons if updates_enabled is 0
-if (updatesEnabled === 0) {
-    const editButtons = document.querySelectorAll('.edit-btn');
-    editButtons.forEach(button => {
-        button.classList.add('disabled');
-        button.setAttribute('disabled', 'true');
-    });
-}
-
     </script>
 </body>
 
