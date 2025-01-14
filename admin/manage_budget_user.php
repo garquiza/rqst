@@ -159,13 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <button class="btn btn-outline-success btn-sm" title="Activate" onclick="updateStatus(<?php echo $user['id']; ?>, 'activate');">
-                                            <i class="fa fa-check"></i>
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm" title="Disable" onclick="updateStatus(<?php echo $user['id']; ?>, 'disabled');">
-                                            <i class="fa fa-times"></i>
-                                        </button>
-                                        <a href="edit_bac_user.php?id=<?php echo $user['id']; ?>" class="btn btn-warning btn-sm" title="Edit">
+                                        <a href="edit_budget_user.php?id=<?php echo $user['id']; ?>" class="btn btn-warning btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <a href="#" class="btn btn-danger btn-sm" title="Delete" onclick="confirmDelete(<?php echo $user['id']; ?>); return false;">
@@ -270,48 +264,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         });
                 }
             });
-        }
-
-        function updateStatus(userId, status) {
-            fetch('update_budget_status.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        id: userId,
-                        status: status
-                    }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        Swal.fire({
-                            title: 'Success!',
-                            text: `User status updated to ${status}.`,
-                            icon: 'success',
-                            confirmButtonText: 'Okay',
-                        }).then(() => {
-                            location.reload(); // Refresh the page to reflect the changes
-                        });
-                    } else {
-                        Swal.fire({
-                            title: 'Error!',
-                            text: data.message || 'Failed to update status.',
-                            icon: 'error',
-                            confirmButtonText: 'Okay',
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'An unexpected error occurred.',
-                        icon: 'error',
-                        confirmButtonText: 'Okay',
-                    });
-                });
         }
     </script>
     <script>

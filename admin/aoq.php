@@ -99,9 +99,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->close();
 }
 
-// Close the statement
-$stmt->close();
-
 $current_page = 'aoq.php';
 
 // Fetch procurement titles 

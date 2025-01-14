@@ -102,6 +102,7 @@ foreach ($items as $item) {
     $total_amount += $item['total_cost'];
 }
 
+
 ?>
 
 <!DOCTYPE html>
