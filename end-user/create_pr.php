@@ -311,7 +311,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // Check if response indicates success
                     if (response.success) {
                         // Show success message
-                        Swal.fire('Success!', 'Purchase Request Created Successfully!', 'success');
+                        Swal.fire({
+                            title: 'Success!',
+                            text: 'Purchase Request Created Successfully!',
+                            icon: 'success',
+                            timer: 2500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        }).then(() => {
+                            // Redirect after 5 seconds
+                            window.location.href = 'pr.php';
+                        });
                     } else {
                         // Show error message
                         Swal.fire('Error!', response.message, 'error');
