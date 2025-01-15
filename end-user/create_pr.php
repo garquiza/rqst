@@ -13,10 +13,6 @@ $user_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'User';
 // Include database connection
 include('src/config/database.php');
 
-// Query to fetch inventory items
-$query = "SELECT inventory_id, item_name, item_description, unit_cost FROM inventory";
-$result = mysqli_query($conn, $query);
-
 // Fetch PPMP entries for the dropdown
 $ppmpQuery = "SELECT ppmp_id, project_title FROM ppmp_list WHERE status = 'approved'";
 
@@ -76,37 +72,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo "Please select a PPMP.";
     }
 }
-// Process the form when submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Capture form data
-    $ppmp_id = isset($_POST['ppmp_id']) ? $_POST['ppmp_id'] : '';
-    $department = isset($_POST['department']) ? $_POST['department'] : '';
-    $section = isset($_POST['section']) ? $_POST['section'] : '';
-    $general_item = isset($_POST['general_item']) ? $_POST['general_item'] : '';
-    $quantity = isset($_POST['quantity']) ? $_POST['quantity'] : 0;
-    $unit_cost = isset($_POST['unit_cost']) ? $_POST['unit_cost'] : 0;
-    $purpose = isset($_POST['purpose']) ? $_POST['purpose'] : '';
-
-    // Calculate the total cost
-    $total_cost = $quantity * $unit_cost;
-
-    // Prepare the SQL query to insert the data
-    $query = "INSERT INTO purchase_request_items (pr_id, department, section, general_item, quantity, unit_cost, total_cost, purpose)
-              VALUES ('$ppmp_id', '$department', '$section', '$general_item', '$quantity', '$unit_cost', '$total_cost', '$purpose')";
-
-    // Execute the query
-    if (mysqli_query($conn, $query)) {
-        // On success, redirect or show a success message
-        echo "<script>Swal.fire('Success!', 'Purchase Request Created Successfully!', 'success');</script>";
-        // Optionally redirect to another page, like the list of purchase requests
-        header("Location: purchase_requests.php"); // Modify this based on your page structure
-        exit();
-    } else {
-        // On failure, display an error message
-        echo "<script>Swal.fire('Error!', 'Failed to create Purchase Request!', 'error');</script>";
-    }
-}
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -342,15 +307,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             xhr.onload = function() {
                 if (xhr.status === 200) {
                     var response = JSON.parse(xhr.responseText);
+
+                    // Check if response indicates success
                     if (response.success) {
-                        // Handle success, you can show a success message or redirect
+                        // Show success message
                         Swal.fire('Success!', 'Purchase Request Created Successfully!', 'success');
-                        window.location.href = 'pr.php'; // Redirect after success
                     } else {
+                        // Show error message
                         Swal.fire('Error!', response.message, 'error');
                     }
+                } else {
+                    // Handle error when status is not 200
+                    Swal.fire('Error!', 'There was an issue with the request. Please try again later.', 'error');
                 }
             };
             xhr.send(formData); // Send the data
         });
     </script>
+</body>
+
+</html>

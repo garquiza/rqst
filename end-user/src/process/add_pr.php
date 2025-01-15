@@ -27,16 +27,66 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Calculate the total cost
     $total_cost = $quantity * $unit_cost;
 
-    // Prepare the SQL query to insert the data
-    $query = "INSERT INTO purchase_request_items (pr_id, department, section, general_item, quantity, unit_cost, total_cost, purpose)
-              VALUES ('$ppmp_id', '$department', '$section', '$general_item', '$quantity', '$unit_cost', '$total_cost', '$purpose')";
+    // Generate a unique purchase request number (PR-YYYY-MM-001++)
+    $pr_number = 'PR-' . date('Y-m') . '-' . str_pad(rand(1, 999), 3, '0', STR_PAD_LEFT);
 
-    // Execute the query
-    if (mysqli_query($conn, $query)) {
-        // On success, return a success response
-        echo json_encode(['success' => true, 'message' => 'Purchase Request Created Successfully!']);
+    // Default pr_process_status
+    $pr_process_status = 'Not Applicable';
+
+    // Insert the purchase request into the purchase_requests table
+    $query = "INSERT INTO purchase_requests (pr_number, end_user_id, ppmp_id, pr_process_status) 
+              VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param("siis", $pr_number, $_SESSION['user_id'], $ppmp_id, $pr_process_status);
+
+    if ($stmt->execute()) {
+        $pr_id = $stmt->insert_id; // Get the inserted pr_id
+
+        // Insert the purchase request item into the purchase_request_items table
+        $itemQuery = "INSERT INTO purchase_request_items (pr_id, department, section, general_item, quantity, unit_cost, total_cost, purpose) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $itemStmt = $conn->prepare($itemQuery);
+        $itemStmt->bind_param("isssdiis", $pr_id, $department, $section, $general_item, $quantity, $unit_cost, $total_cost, $purpose);
+
+        if ($itemStmt->execute()) {
+            // Success - Create a notification
+            $notification_title = "New Purchase Request Submitted";
+            $notification_message = "A new purchase request (PR Number: {$pr_number}) has been submitted by {$_SESSION['user_name']}.";
+
+            // Insert notification into notifications table
+            $notification_query = "INSERT INTO notifications (title, message, user_id) VALUES (?, ?, ?)";
+            $notification_stmt = $conn->prepare($notification_query);
+            $notification_stmt->bind_param("ssi", $notification_title, $notification_message, $_SESSION['user_id']);
+            $notification_stmt->execute();
+
+            // Return JSON response
+            echo json_encode([
+                'success' => true,
+                'message' => 'Purchase Request submitted successfully and notification sent.'
+            ]);
+        } else {
+            // Item insert failed
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to add item to the purchase request.'
+            ]);
+        }
     } else {
-        // On failure, return an error response
-        echo json_encode(['success' => false, 'message' => 'Failed to create Purchase Request!']);
+        // Purchase request insert failed
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to create purchase request.'
+        ]);
     }
+
+    $stmt->close();
+    $itemStmt->close();
+    $notification_stmt->close();
+    $conn->close();
+} else {
+    // Missing form data
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Missing required form data'
+    ]);
 }
