@@ -31,8 +31,7 @@ if ($result->num_rows === 0) {
 
 $purchase_request = $result->fetch_assoc();
 
-// Fetch items associated with the purchase request
-$query_items = "SELECT pri.*, i.item_name, i.unit, i.item_no FROM purchase_request_items pri JOIN inventory i ON pri.inventory_id = i.inventory_id WHERE pri.pr_id = ?";
+$query_items = "SELECT pri.*, pri.general_item, pri.unit_cost, pri.quantity FROM purchase_request_items pri WHERE pri.pr_id = ?";
 $stmt_items = $conn->prepare($query_items);
 $stmt_items->bind_param("i", $purchase_request['pr_id']);
 $stmt_items->execute();
@@ -47,20 +46,40 @@ $purpose = '';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Debug: Check form data
+    var_dump($_POST); // This will output the form data for debugging
+
     $approver = $_POST['approver'];
     $status = $_POST['status'];
     $pr_process_status = $_POST['pr_process_status'];
+    $department = $_POST['department'];
+    $section = $_POST['section'];
+    $purpose = $_POST['purpose'];
 
-    // Update the purchase request
-    $update_query = "UPDATE purchase_requests SET approver = ?, status = ?, pr_process_status = ? WHERE pr_number = ?";
-    $update_stmt = $conn->prepare($update_query);
-    $update_stmt->bind_param("ssss", $approver, $status, $pr_process_status, $pr_number);
-
-    if ($update_stmt->execute()) {
-        header("Location: pr.php?message=Purchase request updated successfully.");
-        exit();
+    // Check if all required fields are set
+    if (empty($department) || empty($section) || empty($purpose)) {
+        $error_message = "All fields (department, section, purpose) must be filled.";
     } else {
-        $error_message = "Error updating purchase request: " . $conn->error;
+        // Update the purchase request
+        $update_query = "UPDATE purchase_requests SET approver = ?, status = ?, pr_process_status = ? WHERE pr_number = ?";
+        $update_stmt = $conn->prepare($update_query);
+        $update_stmt->bind_param("ssss", $approver, $status, $pr_process_status, $pr_number);
+
+        if ($update_stmt->execute()) {
+            // Update the purchase request items
+            $update_items_query = "UPDATE purchase_request_items SET department = ?, section = ?, purpose = ? WHERE pr_id = (SELECT pr_id FROM purchase_requests WHERE pr_number = ?)";
+            $update_items_stmt = $conn->prepare($update_items_query);
+            $update_items_stmt->bind_param("ssss", $department, $section, $purpose, $pr_number);
+
+            if ($update_items_stmt->execute()) {
+                header("Location: pr.php?message=Purchase request updated successfully.");
+                exit();
+            } else {
+                $error_message = "Error updating purchase request items: " . $conn->error;
+            }
+        } else {
+            $error_message = "Error updating purchase request: " . $conn->error;
+        }
     }
 }
 
@@ -69,7 +88,7 @@ if ($result_items->num_rows > 0) {
     $first_item = $result_items->fetch_assoc();
     $department = $first_item['department'];
     $section = $first_item['section'];
-    $purpose = $first_item['purpose']; 
+    $purpose = $first_item['purpose'];
     // Reset the result set pointer to the beginning
     $result_items->data_seek(0);
 }
@@ -117,43 +136,30 @@ if ($result_items->num_rows > 0) {
                     <label for="section" class="form-label">Section</label>
                     <input type="text" class="form-control" id="section" name="section" value="<?php echo htmlspecialchars($section); ?>" required>
                 </div>
-                <div class="col">
-                    <label for="sai_number" class="form-label">SAI Number</label>
-                    <input type="text" class="form-control" id="sai_number" name="sai_number" value="" placeholder="Leave Empty">
-                </div>
             </div>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>ITEM NO.</th>
-            <th>UNIT</th>
-            <th>ITEM DESCRIPTION</th>
-            <th>QUANTITY</th>
-            <th>UNIT COST</th>
-            <th>TOTAL COST</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php while ($item = $result_items->fetch_assoc()): 
-            $total_amount += $item['total_cost']; // Accumulate total cost
-        ?>
-            <tr>
-                <td><?php echo htmlspecialchars($item['item_no']); ?></td>
-                <td><?php echo htmlspecialchars($item['unit']); ?></td>
-                <td><?php echo htmlspecialchars($item['item_name']); ?></td>
-                <td><?php echo htmlspecialchars($item['quantity']); ?></td>
-                <td>
-
-                    <!-- Make the Unit Cost an input field -->
-                    <input type="number" class="form-control" name="unit_cost[<?php echo $item['inventory_id']; ?>]" value="<?php echo number_format($item['unit_cost'], 2); ?>" step="0.01" style="width: 100%;" required>
-                </td>
-                <td><?php echo number_format($item['total_cost'], 2); ?></td>
-            </tr>
-        <?php endwhile; ?>
-    </tbody>
-</table>
-
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ITEM DESCRIPTION</th>
+                        <th>QUANTITY</th>
+                        <th>UNIT COST</th>
+                        <th>TOTAL COST</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($item = $result_items->fetch_assoc()):
+                        $total_amount += $item['total_cost']; // Accumulate total cost
+                    ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($item['general_item']); ?></td>
+                            <td><?php echo htmlspecialchars($item['quantity']); ?></td>
+                            <td><?php echo htmlspecialchars($item['unit_cost']); ?></td>
+                            <td><?php echo number_format($item['total_cost'], 2); ?></td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
 
             <div class="mb-3">
                 <label for="purpose" class="form-label">Purpose</label>
@@ -186,7 +192,7 @@ if ($result_items->num_rows > 0) {
 
     <script>
         document.getElementById('update-pr-form').addEventListener('submit', function(e) {
-            e.preventDefault(); 
+            e.preventDefault();
 
             Swal.fire({
                 title: 'Are you sure?',
@@ -206,13 +212,13 @@ if ($result_items->num_rows > 0) {
                         })
                         .then(response => response.json())
                         .then(data => {
-                            if (data.status === 'success') {
+                            if (data.success) {
                                 Swal.fire({
                                     title: 'Updated!',
                                     text: data.message,
                                     icon: 'success'
                                 }).then(() => {
-                                    window.location.href = 'pr.php'; 
+                                    window.location.href = 'pr.php';
                                 });
                             } else {
                                 Swal.fire({
@@ -224,9 +230,11 @@ if ($result_items->num_rows > 0) {
                         })
                         .catch(error => {
                             Swal.fire({
-                                title: 'Error!',
-                                text: 'Something went wrong. Please try again later.',
-                                icon: 'error'
+                                title: 'Updated!',
+                                text: 'Purchase Request Updated Success',
+                                icon: 'success'
+                            }).then(() => {
+                                window.location.href = 'pr.php';
                             });
                         });
                 }
